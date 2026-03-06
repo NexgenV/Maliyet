@@ -149,6 +149,10 @@
 
   /* iOS Safari fixes */
   input[type="number"] { -webkit-appearance: none; }
+  /* Remove spinner arrows from all number inputs */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   input, select, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .btn { -webkit-tap-highlight-color: transparent; }
   /* Prevent iOS font size zoom on input focus */
@@ -869,12 +873,31 @@ function renderMaterialList() {
 
 function updateMatPriceById(id,val) {
   const mat=data.materials.find(m=>m.id===id);
-  if(mat){mat.price=parseFloat(val)||0; save();}
+  if(mat){
+    mat.price=parseFloat(val)||0;
+    save();
+    renderFormulaList();
+    renderIngredients();
+    const resultArea = document.getElementById('resultArea');
+    if(resultArea && resultArea.style.display !== 'none') {
+      calculate();
+    }
+  }
 }
 
 function updateMatCurrencyById(id, cur) {
   const mat=data.materials.find(m=>m.id===id);
-  if(mat){mat.currency=cur; save(); renderMaterialList();}
+  if(mat){
+    mat.currency=cur;
+    save();
+    renderMaterialList();
+    renderFormulaList();
+    renderIngredients();
+    const resultArea = document.getElementById('resultArea');
+    if(resultArea && resultArea.style.display !== 'none') {
+      calculate();
+    }
+  }
 }
 
 function deleteMaterial(id) {
