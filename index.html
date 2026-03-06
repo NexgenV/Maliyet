@@ -288,6 +288,7 @@
   <div class="tab" onclick="showTab('formuller')">📋 FORMÜLLER</div>
   <div class="tab" onclick="showTab('hammaddeler')">📦 HAMMADDELER</div>
   <div class="tab" onclick="showTab('tedarikciler')">🏭 TEDARİKÇİLER</div>
+  <div class="tab" id="musteriTab" onclick="showTab('musteriler')">👥 MÜŞTERİLER</div>
   <div class="tab admin-tab" id="adminTab" onclick="showTab('admin')" style="display:none">⚙️ YÖNETİM</div>
 </div>
 
@@ -454,6 +455,102 @@
     <div class="modal-title">Formül Yükle</div>
     <div id="loadFormList"></div>
     <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('loadFormModal')">KAPAT</button>
+  </div>
+</div>
+
+<!-- MÜŞTERİLER -->
+<div id="tab-musteriler" class="page">
+  <div class="card">
+    <div class="card-title">👥 Yeni Müşteri Ekle</div>
+    <div class="form-row">
+      <div><label>MÜŞTERİ ADI / FİRMA</label><input type="text" id="cusName" placeholder="Firma / Kişi adı"></div>
+      <div><label>YETKİLİ KİŞİ</label><input type="text" id="cusContact" placeholder="Ad Soyad"></div>
+    </div>
+    <div class="form-row">
+      <div><label>TELEFON</label><input type="text" id="cusPhone" placeholder="+90 5xx xxx xx xx"></div>
+      <div><label>E-POSTA</label><input type="text" id="cusEmail" placeholder="ornek@email.com"></div>
+    </div>
+    <div class="form-full"><label>ADRES / NOT</label><textarea id="cusNote" rows="2" placeholder="Adres veya ek bilgi" style="resize:vertical"></textarea></div>
+    <button class="btn btn-gold" onclick="addCustomer()">+ MÜŞTERİ KAYDET</button>
+  </div>
+  <div class="card">
+    <div class="card-title">🏢 Müşteri Listesi <span id="cusCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+    <div style="margin-bottom:10px"><input type="text" id="cusSearch" placeholder="🔍 Ara..." oninput="renderCustomerList()"></div>
+    <div id="customerList"></div>
+  </div>
+</div>
+
+<!-- MÜŞTERİ DETAY PANEL (full page slide) -->
+<div id="cusDetailPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:300;overflow-y:auto;">
+  <div style="background:linear-gradient(135deg,#0e2530,#0b1a1f);border-bottom:2px solid var(--nx-blue);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
+    <button onclick="closeCusDetail()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 8px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">←</button>
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold)" id="cusPanelTitle">Müşteri</div>
+      <div style="font-size:10px;color:var(--muted)" id="cusPanelSub"></div>
+    </div>
+  </div>
+  <div style="padding:14px">
+    <!-- Müşteri bilgi kartı -->
+    <div class="card" id="cusPanelInfo"></div>
+
+    <!-- Formüller -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin:0">📋 Formüller</div>
+        <button class="btn btn-gold btn-sm" onclick="openNewFormulaForCustomer()">+ Yeni Formül</button>
+      </div>
+      <div id="cusPanelFormulas"></div>
+    </div>
+
+    <!-- Yeni Formül Ekleme -->
+    <div class="card" id="cusFormulaForm" style="display:none;border-color:var(--nx-teal)">
+      <div class="card-title">➕ Yeni Formül Ekle</div>
+      <div class="form-row">
+        <div><label>FORMÜL ADI / RENK KODU</label><input type="text" id="cusFormName" placeholder="ALTIN, BRONZ..."></div>
+        <div><label>TARİH</label><input type="date" id="cusFormDate"></div>
+      </div>
+      <div class="form-row">
+        <div><label>YOĞUNLUK</label><input type="number" id="cusFormDensity" step="0.01" value="1.60"></div>
+        <div><label>LOT (L kg)</label><input type="number" id="cusFormTotalL" step="0.001" placeholder="83.750"></div>
+      </div>
+
+      <div class="section-label" style="margin-top:8px">HAMMADDELER</div>
+      <div id="cusFormIngList"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-outline btn-sm" onclick="openCusIngModal()">+ Hammadde Ekle</button>
+        <button class="btn btn-outline btn-sm" onclick="loadBaseFormula()">📂 Mevcut Formülden Yükle</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveCusFormula()">💾 FORMÜLÜ KAYDET</button>
+        <button class="btn btn-outline" onclick="cancelCusFormula()">İPTAL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CUS INGREDIENT MODAL -->
+<div class="modal-overlay" id="cusIngModal">
+  <div class="modal">
+    <div class="modal-title">Hammadde Ekle</div>
+    <div class="form-full"><label>HAMMADDE SEÇ</label><select id="cusIngSelect"><option value="">Seçiniz...</option></select></div>
+    <div class="form-row">
+      <div><label>MİKTAR</label><input type="number" id="cusIngAmount" placeholder="0" step="0.001"></div>
+      <div><label>BİRİM</label><select id="cusIngUnit"><option value="kg">KG</option><option value="gr">GR</option></select></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-gold" style="flex:1" onclick="confirmCusIng()">EKLE</button>
+      <button class="btn btn-outline" onclick="closeModal('cusIngModal')">İPTAL</button>
+    </div>
+  </div>
+</div>
+
+<!-- BASE FORMULA LOAD MODAL -->
+<div class="modal-overlay" id="baseFormModal">
+  <div class="modal">
+    <div class="modal-title">Formül Yükle</div>
+    <div id="baseFormList"></div>
+    <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('baseFormModal')">KAPAT</button>
   </div>
 </div>
 
@@ -671,6 +768,7 @@ function resetAllData() {
 // ======== DEFAULT DATA ========
 const DEFAULT_DATA = {
   settings: { currency: 'TRY', usdRate: 38.50 },
+  customers: [],
   suppliers: [
     {id:1,name:'DERKİM',contact:'',materials:'EVA-18, EVA-28'},
     {id:2,name:'AYDIN MADENCİLİK',contact:'',materials:'KALSİT'},
@@ -866,8 +964,9 @@ let currentIngredients = [];
 function save() { lsSet('nexgen_v2', JSON.stringify(data)); updateHeaderStats(); }
 
 function updateHeaderStats() {
+  const cusCount = (data.customers||[]).length;
   document.getElementById('headerStats').innerHTML =
-    data.formulas.length + ' formül<br>' + data.materials.length + ' hammadde';
+    data.formulas.length + ' formül · ' + data.materials.length + ' hammadde · ' + cusCount + ' müşteri';
 }
 
 function showToast(msg, err) {
@@ -881,7 +980,7 @@ function showToast(msg, err) {
 
 // ======== TABS ========
 function showTab(name) {
-  const tabNames = ['hesapla','formuller','hammaddeler','tedarikciler','admin'];
+  const tabNames = ['hesapla','formuller','hammaddeler','tedarikciler','musteriler','admin'];
   tabNames.forEach((t,i) => {
     const tabEl = document.querySelectorAll('.tab')[i];
     if(tabEl) tabEl.classList.toggle('active', t===name);
@@ -892,6 +991,7 @@ function showTab(name) {
   if(name==='tedarikciler') renderSupplierList();
   if(name==='formuller') renderFormulaList();
   if(name==='admin') renderUserList();
+  if(name==='musteriler') renderCustomerList();
 }
 
 // ======== INGREDIENTS ========
@@ -1325,10 +1425,276 @@ function setRateStatus(msg, color) {
   if(el) { el.textContent = msg; el.style.color = color; }
 }
 
+// ======== CUSTOMERS ========
+let activeCusId = null;
+let cusFormIngredients = [];
+
+function addCustomer() {
+  const name = document.getElementById('cusName').value.trim();
+  if(!name){showToast('Müşteri adı girin!',true);return;}
+  if(!data.customers) data.customers = [];
+  data.customers.push({
+    id: Date.now(),
+    name,
+    contact: document.getElementById('cusContact').value.trim(),
+    phone: document.getElementById('cusPhone').value.trim(),
+    email: document.getElementById('cusEmail').value.trim(),
+    note: document.getElementById('cusNote').value.trim(),
+    createdAt: new Date().toISOString().split('T')[0]
+  });
+  save();
+  document.getElementById('cusName').value='';
+  document.getElementById('cusContact').value='';
+  document.getElementById('cusPhone').value='';
+  document.getElementById('cusEmail').value='';
+  document.getElementById('cusNote').value='';
+  renderCustomerList();
+  updateHeaderStats();
+  showToast('✅ Müşteri eklendi: '+name);
+}
+
+function renderCustomerList() {
+  if(!data.customers) data.customers = [];
+  const search = (document.getElementById('cusSearch')||{value:''}).value.toLowerCase();
+  const el = document.getElementById('customerList');
+  const filtered = data.customers.filter(c =>
+    c.name.toLowerCase().includes(search) ||
+    (c.contact||'').toLowerCase().includes(search) ||
+    (c.email||'').toLowerCase().includes(search)
+  );
+  document.getElementById('cusCount').textContent = '(' + data.customers.length + ' kayıt)';
+  if(!filtered.length){el.innerHTML='<div class="empty">Müşteri bulunamadı</div>';return;}
+  el.innerHTML = filtered.map(c => {
+    const formulaCount = (data.formulas||[]).filter(f => f.customer === c.name).length;
+    return `
+    <div class="fcard" onclick="showCustomerDetail(${c.id})">
+      <div class="fcard-name" style="font-size:15px">🏢 ${c.name}</div>
+      ${c.contact?`<div style="font-size:11px;color:var(--muted);margin-top:2px">👤 ${c.contact}</div>`:''}
+      ${c.phone?`<div style="font-size:11px;color:var(--muted)">📞 ${c.phone}</div>`:''}
+      ${c.email?`<div style="font-size:11px;color:var(--muted)">✉️ ${c.email}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:5px;align-items:center;flex-wrap:wrap;">
+        ${formulaCount?`<span class="badge badge-gold">📋 ${formulaCount} Formül</span>`:''}
+        <span style="font-size:10px;color:var(--muted)">${c.createdAt||''}</span>
+      </div>
+      <button class="del-btn" style="position:absolute;right:12px;top:12px" onclick="event.stopPropagation();deleteCustomer(${c.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function showCustomerDetail(id) {
+  if(!data.customers) data.customers = [];
+  const c = data.customers.find(x => x.id === id);
+  if(!c) return;
+  activeCusId = id;
+  cancelCusFormula();
+
+  document.getElementById('cusPanelTitle').textContent = '🏢 ' + c.name;
+  const formulas = (data.formulas||[]).filter(f => f.customer === c.name);
+  document.getElementById('cusPanelSub').textContent = formulas.length + ' formül · ' + (c.createdAt||'');
+
+  document.getElementById('cusPanelInfo').innerHTML = `
+    <div class="card-title">📇 İletişim Bilgileri</div>
+    <div style="display:grid;gap:7px">
+      ${c.contact?`<div style="font-size:13px">👤 <strong>Yetkili:</strong> ${c.contact}</div>`:''}
+      ${c.phone?`<div style="font-size:13px">📞 <strong>Telefon:</strong> <a href="tel:${c.phone}" style="color:var(--nx-teal)">${c.phone}</a></div>`:''}
+      ${c.email?`<div style="font-size:13px">✉️ <strong>E-posta:</strong> <a href="mailto:${c.email}" style="color:var(--nx-teal)">${c.email}</a></div>`:''}
+      ${c.note?`<div style="font-size:13px">📝 <strong>Not:</strong> ${c.note}</div>`:''}
+      ${!c.contact&&!c.phone&&!c.email&&!c.note?'<div style="color:var(--muted);font-size:12px">İletişim bilgisi girilmemiş</div>':''}
+    </div>`;
+
+  renderCusPanelFormulas(c.name);
+  document.getElementById('cusDetailPanel').style.display = 'block';
+  document.getElementById('cusDetailPanel').scrollTop = 0;
+}
+
+function renderCusPanelFormulas(cusName) {
+  const formulas = (data.formulas||[]).filter(f => f.customer === cusName);
+  const el = document.getElementById('cusPanelFormulas');
+  if(!formulas.length){
+    el.innerHTML='<div class="empty">Henüz formül eklenmemiş. "+ Yeni Formül" ile ekleyin.</div>';
+    return;
+  }
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+  el.innerHTML = formulas.map(f => {
+    let cost = 0;
+    f.ingredients.forEach(ing => {
+      const mat = data.materials.find(m => m.id === ing.materialId);
+      const p = mat ? mat.price : 0;
+      const kg = ing.unit==='gr' ? ing.amount/1000 : ing.amount;
+      cost += p * kg;
+    });
+    return `<div class="fcard" style="cursor:default">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="flex:1">
+          <div class="fcard-name">${f.name}</div>
+          <div class="fcard-meta" style="margin-top:4px">
+            <span class="badge badge-gold">${f.ingredients.length} hammadde</span>
+            ${f.date?`<span class="badge badge-blue">${f.date}</span>`:''}
+            ${f.totalL?`<span class="badge badge-green">L=${f.totalL}kg</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--green)">${cost>0?cost.toFixed(2)+' ₺':'–'}</div>
+          <div style="display:flex;gap:5px;margin-top:4px">
+            <button class="btn btn-outline btn-sm" onclick="loadCusFormulaToHesapla(${f.id})">⚡ Hesapla</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCusFormula(${f.id})">×</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function closeCusDetail() {
+  document.getElementById('cusDetailPanel').style.display = 'none';
+  activeCusId = null;
+  renderCustomerList();
+}
+
+function openNewFormulaForCustomer() {
+  cusFormIngredients = [];
+  document.getElementById('cusFormName').value = '';
+  document.getElementById('cusFormDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('cusFormDensity').value = '1.60';
+  document.getElementById('cusFormTotalL').value = '';
+  renderCusFormIngList();
+  document.getElementById('cusFormulaForm').style.display = 'block';
+  document.getElementById('cusFormulaForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cancelCusFormula() {
+  const el = document.getElementById('cusFormulaForm');
+  if(el) el.style.display = 'none';
+  cusFormIngredients = [];
+}
+
+function renderCusFormIngList() {
+  const el = document.getElementById('cusFormIngList');
+  if(!cusFormIngredients.length){
+    el.innerHTML='<div class="empty" style="padding:12px">Hammadde eklenmedi</div>';return;
+  }
+  el.innerHTML = cusFormIngredients.map((ing,i) => `
+    <div class="mat-row" style="margin-bottom:5px">
+      <div><div class="mat-name">${ing.name}</div><div class="mat-sup">${ing.unit}</div></div>
+      <input type="number" value="${ing.amount}" step="0.001"
+        onchange="cusFormIngredients[${i}].amount=parseFloat(this.value)||0"
+        style="width:88px;text-align:right">
+      <span style="font-size:10px;color:var(--muted)">${ing.unit}</span>
+      <button class="del-btn" onclick="cusFormIngredients.splice(${i},1);renderCusFormIngList()">×</button>
+    </div>`).join('');
+}
+
+function openCusIngModal() {
+  const sel = document.getElementById('cusIngSelect');
+  sel.innerHTML = '<option value="">Seçiniz...</option>' +
+    data.materials.map(m=>`<option value="${m.id}">${m.name} (${m.unit})</option>`).join('');
+  document.getElementById('cusIngAmount').value = '';
+  document.getElementById('cusIngModal').classList.add('open');
+}
+
+function confirmCusIng() {
+  const matId = parseInt(document.getElementById('cusIngSelect').value);
+  const amount = parseFloat(document.getElementById('cusIngAmount').value)||0;
+  const unit = document.getElementById('cusIngUnit').value;
+  if(!matId){showToast('Hammadde seçin!',true);return;}
+  if(!amount){showToast('Miktar girin!',true);return;}
+  const mat = data.materials.find(m=>m.id===matId);
+  cusFormIngredients.push({materialId:matId, name:mat.name, amount, unit});
+  renderCusFormIngList();
+  closeModal('cusIngModal');
+}
+
+function loadBaseFormula() {
+  const el = document.getElementById('baseFormList');
+  el.innerHTML = (data.formulas||[]).map(f=>`
+    <div class="fcard" onclick="applyBaseFormula(${f.id})">
+      <div class="fcard-name" style="font-size:14px">${f.name}</div>
+      <div class="fcard-meta">${f.ingredients.length} hammadde · ${f.date||''}</div>
+    </div>`).join('') || '<div class="empty">Kayıtlı formül yok</div>';
+  document.getElementById('baseFormModal').classList.add('open');
+}
+
+function applyBaseFormula(id) {
+  const f = data.formulas.find(x=>x.id===id);
+  if(!f) return;
+  cusFormIngredients = f.ingredients.map(i=>({...i}));
+  document.getElementById('cusFormName').value = f.name;
+  document.getElementById('cusFormDensity').value = f.density||1.60;
+  if(f.totalL) document.getElementById('cusFormTotalL').value = f.totalL;
+  renderCusFormIngList();
+  closeModal('baseFormModal');
+  showToast('✅ "'+f.name+'" yüklendi');
+}
+
+function saveCusFormula() {
+  const c = (data.customers||[]).find(x=>x.id===activeCusId);
+  if(!c){showToast('Müşteri bulunamadı!',true);return;}
+  const name = document.getElementById('cusFormName').value.trim();
+  if(!name){showToast('Formül adı girin!',true);return;}
+  if(!cusFormIngredients.length){showToast('En az bir hammadde ekleyin!',true);return;}
+  const nf = {
+    id: Date.now(),
+    name,
+    customer: c.name,
+    date: document.getElementById('cusFormDate').value,
+    density: parseFloat(document.getElementById('cusFormDensity').value)||1.60,
+    totalL: parseFloat(document.getElementById('cusFormTotalL').value)||null,
+    ingredients: JSON.parse(JSON.stringify(cusFormIngredients))
+  };
+  if(!data.formulas) data.formulas = [];
+  data.formulas.push(nf);
+  save();
+  cancelCusFormula();
+  renderCusPanelFormulas(c.name);
+  document.getElementById('cusPanelSub').textContent =
+    (data.formulas.filter(f=>f.customer===c.name).length) + ' formül · ' + (c.createdAt||'');
+  showToast('✅ Formül kaydedildi: '+name);
+}
+
+function deleteCusFormula(id) {
+  if(!confirm('Bu formülü silmek istiyor musunuz?')) return;
+  data.formulas = (data.formulas||[]).filter(f=>f.id!==id);
+  save();
+  const c = (data.customers||[]).find(x=>x.id===activeCusId);
+  if(c) renderCusPanelFormulas(c.name);
+  showToast('Formül silindi');
+}
+
+function loadCusFormulaToHesapla(id) {
+  document.getElementById('cusDetailPanel').style.display = 'none';
+  loadFormula(id);
+  showTab('hesapla');
+  showToast('✅ Formül yüklendi');
+}
+
+function deleteCustomer(id) {
+  if(!confirm('Bu müşteriyi silmek istiyor musunuz?')) return;
+  data.customers = (data.customers||[]).filter(c => c.id !== id);
+  save();
+  renderCustomerList();
+  updateHeaderStats();
+  showToast('Müşteri silindi');
+}
+
+function updateCustomerDropdown() {
+  if(!data.customers) data.customers = [];
+  let dl = document.getElementById('musteriDatalist');
+  if(!dl){
+    dl = document.createElement('datalist');
+    dl.id = 'musteriDatalist';
+    document.body.appendChild(dl);
+    const inp = document.getElementById('musteriAdi');
+    if(inp) inp.setAttribute('list','musteriDatalist');
+  }
+  dl.innerHTML = data.customers.map(c=>`<option value="${c.name}">`).join('');
+}
+
 // ======== INIT ========
 function init() {
   renderLoginUsers();
   if(!data.settings) data.settings = {currency:'TRY', usdRate:38.50, eurRate:41.50};
+  if(!data.customers) data.customers = [];
   document.getElementById('formulTarih').value=new Date().toISOString().split('T')[0];
   document.getElementById('usdRate').value = data.settings.usdRate || 38.50;
   document.getElementById('eurRate').value = data.settings.eurRate || 41.50;
@@ -1336,6 +1702,7 @@ function init() {
   if(data.settings.rateDate) setRateStatus('📅 Son kur: ' + data.settings.rateDate, '#8892a4');
   setCurrency(data.settings.currency || 'TRY');
   updateSupplierDropdowns();
+  updateCustomerDropdown();
   updateHeaderStats();
   loadFormula(1);
   // Auto-fetch rates on load
