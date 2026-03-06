@@ -147,6 +147,15 @@
     .result-grid { grid-template-columns:1fr; }
   }
 
+  /* PRINT STYLES */
+  @media print {
+    header, .tabs, #loginScreen, .toast, .btn, .modal-overlay { display:none!important; }
+    .page { display:block!important; }
+    #tab-hesapla { display:block!important; }
+    body { background:#fff!important; color:#111!important; }
+    #offerBody { display:block!important; }
+  }
+
   /* iOS Safari fixes */
   input[type="number"] { -webkit-appearance: none; }
   /* Remove spinner arrows from all number inputs */
@@ -315,6 +324,31 @@
       <div><label>MÜŞTERİ ADI</label><input type="text" id="musteriAdi" placeholder="Müşteri adı"></div>
       <div><label>YOĞUNLUK</label><input type="number" id="yogunluk" step="0.01" value="1.60"></div>
     </div>
+    <div class="form-row three">
+      <div><label>LOT SAYISI</label><input type="number" id="lotSayisi" placeholder="1" min="1" value="1" step="1" oninput="updateLotCalc()"></div>
+      <div><label>KAR MARJI %</label><input type="number" id="karMarji" placeholder="0" min="0" step="0.1" value="0" oninput="updateLotCalc()"></div>
+      <div><label>KDV %</label><input type="number" id="kdvOran" placeholder="0" min="0" step="1" value="0" oninput="updateLotCalc()"></div>
+    </div>
+    <!-- VADELİ FİYATLAMA -->
+    <div style="background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.25);border-radius:10px;padding:12px;margin-top:4px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#a78bfa;letter-spacing:1px;margin-bottom:10px">📅 VADELİ FİYATLAMA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <label>PEŞİN İSKONTO %</label>
+          <input type="number" id="pesinIskonto" placeholder="0" min="0" max="100" step="0.1" value="0" oninput="updateLotCalc()">
+        </div>
+        <div>
+          <label>VADE (AY)</label>
+          <input type="number" id="vadeAy" placeholder="0" min="0" max="120" step="1" value="0" oninput="updateLotCalc()">
+        </div>
+        <div>
+          <label>VADE FAİZİ % (AYLIK)</label>
+          <input type="number" id="vadeFaiz" placeholder="0" min="0" step="0.01" value="0" oninput="updateLotCalc()">
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted)">Vade fiyatı = Satış fiyatı × (1 + aylık faiz × ay sayısı) &nbsp;|&nbsp; Peşin fiyat = Satış fiyatı × (1 − iskonto%)</div>
+    </div>
+    <div class="form-full"><label>FORMÜL NOTU / ÜRETİM TALİMATI</label><textarea id="formulNot" rows="2" placeholder="Üretim talimatı, özel not..." style="resize:vertical"></textarea></div>
   </div>
 
   <div class="card">
@@ -327,9 +361,11 @@
     </div>
   </div>
 
-  <div style="display:flex;gap:8px;margin-bottom:14px;">
-    <button class="btn btn-gold" style="flex:1" onclick="calculate()">⚡ MALİYETİ HESAPLA</button>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="btn btn-gold" style="flex:1;min-width:140px" onclick="calculate()">⚡ MALİYETİ HESAPLA</button>
     <button class="btn btn-outline" onclick="saveFormula()" title="Kaydet">💾</button>
+    <button class="btn btn-outline" onclick="copyFormula()" title="Formülü Kopyala">📋</button>
+    <button class="btn btn-outline" onclick="printOffer()" title="PDF / Teklif">🖨️</button>
   </div>
 
   <div id="resultArea" style="display:none">
@@ -347,6 +383,60 @@
         <div class="rt-sub" id="resTotalSub"></div>
       </div>
     </div>
+    <!-- Lot / Kar / KDV paneli -->
+    <div id="lotKarPanel" style="display:none;margin-top:10px">
+      <div class="result-panel" style="border-color:rgba(34,197,94,0.4)">
+        <div class="result-label">💰 SATIŞ FİYATI HESABI</div>
+        <div class="result-grid">
+          <div class="result-item"><div class="ri-label">1 LOT MALİYETİ</div><div class="ri-value" id="resLotCost" style="color:var(--nx-teal)">0 ₺</div><div class="ri-sub" id="resLotKg"></div></div>
+          <div class="result-item"><div class="ri-label">KAR SONRASI (KDV HARİÇ)</div><div class="ri-value" id="resKarFiyat" style="color:#f0b429">0 ₺</div><div class="ri-sub" id="resKarPct"></div></div>
+          <div class="result-item"><div class="ri-label">KDV TUTARI</div><div class="ri-value" id="resKdvTutar" style="color:#a78bfa">0 ₺</div><div class="ri-sub" id="resKdvPct"></div></div>
+          <div class="result-item"><div class="ri-label">SATIŞ FİYATI (KDV DAHİL)</div><div class="ri-value" id="resSatisFiyat" style="color:var(--green)">0 ₺</div><div class="ri-sub" id="resSatisSub"></div></div>
+        </div>
+        <div id="resLotToplamPanel" style="display:none">
+          <div style="height:1px;background:var(--border);margin:10px 0"></div>
+          <div class="result-grid">
+            <div class="result-item"><div class="ri-label">TOPLAM LOT MALİYETİ</div><div class="ri-value" id="resToplamLotCost" style="color:var(--nx-teal)">0 ₺</div><div class="ri-sub" id="resToplamLotSub"></div></div>
+            <div class="result-item"><div class="ri-label">TOPLAM SATIŞ GELİRİ</div><div class="ri-value" id="resToplamSatis" style="color:var(--green)">0 ₺</div><div class="ri-sub" id="resToplamSatisSub"></div></div>
+          </div>
+        </div>
+
+        <!-- VADELİ / PEŞİN PANEL -->
+        <div id="vadePanel" style="display:none">
+          <div style="height:1px;background:rgba(167,139,250,0.3);margin:12px 0"></div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:#a78bfa;letter-spacing:1px;margin-bottom:8px">📅 VADELİ / PEŞİN FİYAT KARŞILAŞTIRMASI</div>
+          <div class="result-grid">
+            <div class="result-item" style="border-color:rgba(34,197,94,0.3)">
+              <div class="ri-label" style="color:#22c55e">💵 PEŞİN FİYAT</div>
+              <div class="ri-value" id="resPesinFiyat" style="color:#22c55e">0 ₺</div>
+              <div class="ri-sub" id="resPesinSub"></div>
+            </div>
+            <div class="result-item" style="border-color:rgba(167,139,250,0.3)">
+              <div class="ri-label" style="color:#a78bfa">📅 VADELİ FİYAT</div>
+              <div class="ri-value" id="resVadeliFiyat" style="color:#a78bfa">0 ₺</div>
+              <div class="ri-sub" id="resVadeliSub"></div>
+            </div>
+            <div class="result-item" style="border-color:rgba(240,180,41,0.3)">
+              <div class="ri-label" style="color:#f0b429">📈 VADE FARKI</div>
+              <div class="ri-value" id="resVadeFarki" style="color:#f0b429">0 ₺</div>
+              <div class="ri-sub" id="resVadeFarkiSub"></div>
+            </div>
+            <div class="result-item" style="border-color:rgba(107,163,255,0.3)">
+              <div class="ri-label" style="color:#6ba3ff">📊 AYLIK ÖDEME</div>
+              <div class="ri-value" id="resAylikOdeme" style="color:#6ba3ff">0 ₺</div>
+              <div class="ri-sub" id="resAylikSub"></div>
+            </div>
+          </div>
+          <!-- Vade tablosu -->
+          <div id="vadeTabloPanel" style="display:none;margin-top:10px">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:6px">ÖDEME PLANI</div>
+            <div style="overflow-x:auto"><table class="dtable" id="vadeTabloBody" style="font-size:11px"></table></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <div class="card" style="margin-top:12px">
       <div class="card-title">📊 Hammadde Detayı</div>
       <div style="overflow-x:auto"><table class="dtable">
@@ -359,9 +449,15 @@
 
 <!-- FORMÜLLER -->
 <div id="tab-formuller" class="page">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <div class="card-title" style="margin:0">Kayıtlı Formüller</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div class="card-title" style="margin:0">Kayıtlı Formüller <span id="formulCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
     <button class="btn btn-gold btn-sm" onclick="showTab('hesapla')">+ Yeni</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+    <input type="text" id="formulSearch" placeholder="🔍 Formül ara..." oninput="renderFormulaList()" style="flex:1;min-width:140px">
+    <select id="formulCusFilter" onchange="renderFormulaList()" style="max-width:160px">
+      <option value="">Tüm Müşteriler</option>
+    </select>
   </div>
   <div id="formulaList"></div>
 </div>
@@ -424,12 +520,92 @@
       <div><label>FİRMA ADI</label><input type="text" id="supName" placeholder="Firma adı"></div>
       <div><label>İLETİŞİM</label><input type="text" id="supContact" placeholder="Telefon / Mail"></div>
     </div>
-    <div class="form-full"><label>SAĞLADIĞI HAMMADDELER</label><input type="text" id="supMaterials" placeholder="EVA-28, EVA-18..."></div>
+    <div class="form-full"><label>ADRES / NOT</label><input type="text" id="supAddress" placeholder="Adres veya ek not"></div>
     <button class="btn btn-gold" onclick="addSupplier()">+ KAYDET</button>
   </div>
   <div class="card">
-    <div class="card-title">🏢 Tedarikçi Listesi</div>
+    <div class="card-title">🏢 Tedarikçi Listesi <span id="supCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+    <div style="margin-bottom:10px"><input type="text" id="supSearch" placeholder="🔍 Ara..." oninput="renderSupplierList()"></div>
     <div id="supplierList"></div>
+  </div>
+</div>
+
+<!-- TEDARİKÇİ DETAY PANELİ -->
+<div id="supDetailPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:300;overflow-y:auto;">
+  <div style="background:linear-gradient(135deg,#0e2530,#0b1a1f);border-bottom:2px solid var(--nx-blue);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
+    <button onclick="closeSupDetail()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 8px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">←</button>
+    <div style="flex:1">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold)" id="supPanelTitle">Tedarikçi</div>
+      <div style="font-size:10px;color:var(--muted)" id="supPanelSub"></div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="openEditSupplier()">✏️ Düzenle</button>
+  </div>
+  <div style="padding:14px">
+
+    <!-- Bilgi kartı -->
+    <div class="card" id="supPanelInfo"></div>
+
+    <!-- Düzenleme formu -->
+    <div class="card" id="supEditForm" style="display:none;border-color:var(--nx-teal)">
+      <div class="card-title">✏️ Tedarikçiyi Düzenle</div>
+      <div class="form-row">
+        <div><label>FİRMA ADI</label><input type="text" id="editSupName" placeholder="Firma adı"></div>
+        <div><label>İLETİŞİM</label><input type="text" id="editSupContact" placeholder="Telefon / Mail"></div>
+      </div>
+      <div class="form-full"><label>ADRES / NOT</label><input type="text" id="editSupAddress" placeholder="Adres veya not"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveEditSupplier()">💾 KAYDET</button>
+        <button class="btn btn-outline" onclick="cancelEditSupplier()">İPTAL</button>
+      </div>
+    </div>
+
+    <!-- Temin ettiği hammaddeler -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin:0">📦 Temin Ettiği Hammaddeler</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddSupMaterial()">+ Hammadde Ekle</button>
+      </div>
+      <div id="supPanelMaterials"></div>
+    </div>
+
+    <!-- Hammadde ekleme formu -->
+    <div class="card" id="supMaterialForm" style="display:none;border-color:var(--nx-teal)">
+      <div class="card-title">➕ Hammadde Ekle / Düzenle</div>
+      <div class="form-row">
+        <div>
+          <label>HAMMADDE SEÇ VEYA YENİ GİR</label>
+          <input type="text" id="supMatName" placeholder="Hammadde adı" list="supMatDatalist">
+          <datalist id="supMatDatalist"></datalist>
+        </div>
+        <div><label>KATEGORİ</label>
+          <select id="supMatCat">
+            <option value="polimer">Polimer/Ana</option>
+            <option value="katki">Katkı Maddesi</option>
+            <option value="boya">Boya/Renk</option>
+            <option value="kimyasal">Kimyasal</option>
+            <option value="dolgu">Dolgu</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row three">
+        <div><label>BİRİM FİYAT</label><input type="number" id="supMatPrice" placeholder="0.00" step="0.0001"></div>
+        <div><label>PARA BİRİMİ</label>
+          <select id="supMatCurrency">
+            <option value="TRY">₺ Türk Lirası</option>
+            <option value="USD">$ Dolar</option>
+            <option value="EUR">€ Euro</option>
+          </select>
+        </div>
+        <div><label>BİRİM</label>
+          <select id="supMatUnit"><option value="kg">KG</option><option value="gr">GR</option><option value="lt">LT</option></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveSupMaterial()">💾 KAYDET</button>
+        <button class="btn btn-outline" onclick="cancelSupMaterial()">İPTAL</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -484,14 +660,33 @@
 <div id="cusDetailPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:300;overflow-y:auto;">
   <div style="background:linear-gradient(135deg,#0e2530,#0b1a1f);border-bottom:2px solid var(--nx-blue);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
     <button onclick="closeCusDetail()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 8px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">←</button>
-    <div>
+    <div style="flex:1">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold)" id="cusPanelTitle">Müşteri</div>
       <div style="font-size:10px;color:var(--muted)" id="cusPanelSub"></div>
     </div>
+    <button class="btn btn-outline btn-sm" onclick="openEditCustomer()">✏️ Düzenle</button>
   </div>
   <div style="padding:14px">
     <!-- Müşteri bilgi kartı -->
     <div class="card" id="cusPanelInfo"></div>
+
+    <!-- Müşteri düzenleme formu -->
+    <div class="card" id="cusEditForm" style="display:none;border-color:var(--nx-teal)">
+      <div class="card-title">✏️ Müşteriyi Düzenle</div>
+      <div class="form-row">
+        <div><label>MÜŞTERİ ADI / FİRMA</label><input type="text" id="editCusName" placeholder="Firma / Kişi adı"></div>
+        <div><label>YETKİLİ KİŞİ</label><input type="text" id="editCusContact" placeholder="Ad Soyad"></div>
+      </div>
+      <div class="form-row">
+        <div><label>TELEFON</label><input type="text" id="editCusPhone" placeholder="+90 5xx xxx xx xx"></div>
+        <div><label>E-POSTA</label><input type="text" id="editCusEmail" placeholder="ornek@email.com"></div>
+      </div>
+      <div class="form-full"><label>ADRES / NOT</label><textarea id="editCusNote" rows="2" style="resize:vertical"></textarea></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveEditCustomer()">💾 KAYDET</button>
+        <button class="btn btn-outline" onclick="cancelEditCustomer()">İPTAL</button>
+      </div>
+    </div>
 
     <!-- Formüller -->
     <div class="card">
@@ -554,6 +749,27 @@
   </div>
 </div>
 
+<!-- FİYAT GEÇMİŞİ MODAL -->
+<div class="modal-overlay" id="priceHistoryModal">
+  <div class="modal">
+    <div class="modal-title">📈 Fiyat Geçmişi</div>
+    <div id="priceHistoryBody"></div>
+    <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('priceHistoryModal')">KAPAT</button>
+  </div>
+</div>
+
+<!-- TEKLİF YAZDIR MODAL -->
+<div class="modal-overlay" id="offerModal">
+  <div class="modal" style="max-height:90vh">
+    <div class="modal-title">🖨️ Teklif / PDF Çıktısı</div>
+    <div id="offerBody" style="font-size:12px;line-height:1.8"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-gold" style="flex:1" onclick="window.print()">🖨️ Yazdır / PDF</button>
+      <button class="btn btn-outline" onclick="closeModal('offerModal')">KAPAT</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN PANELİ -->
 <div id="tab-admin" class="page">
   <div class="card">
@@ -595,6 +811,16 @@
       <div><label>TEKRAR GİRİN</label><input type="password" id="newAdminPass2" placeholder="Şifre tekrar"></div>
     </div>
     <button class="btn btn-outline" onclick="changeAdminPass()">🔐 ŞİFRE GÜNCELLE</button>
+  </div>
+  <div class="card" style="border-color:rgba(34,197,94,0.3)">
+    <div class="card-title" style="color:var(--green)">💾 Veri Yedekleme</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-green btn-sm" onclick="exportData()">⬇️ Dışa Aktar (JSON)</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">⬆️ İçe Aktar (JSON)</button>
+      <button class="btn btn-outline btn-sm" onclick="exportExcel()">📊 Excel'e Aktar</button>
+    </div>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">JSON formatında tüm verilerinizi yedekleyip geri yükleyebilirsiniz.</div>
   </div>
   <div class="card" style="border-color:rgba(239,68,68,0.3)">
     <div class="card-title" style="color:#f87171">⚠️ Tehlikeli Bölge</div>
@@ -1071,6 +1297,13 @@ function clearForm() {
   document.getElementById('formulAdi').value='';
   document.getElementById('musteriAdi').value='';
   document.getElementById('yogunluk').value='1.60';
+  document.getElementById('formulNot').value='';
+  document.getElementById('lotSayisi').value=1;
+  document.getElementById('karMarji').value=0;
+  document.getElementById('kdvOran').value=0;
+  document.getElementById('pesinIskonto').value=0;
+  document.getElementById('vadeAy').value=0;
+  document.getElementById('vadeFaiz').value=0;
   document.getElementById('resultArea').style.display='none';
   renderIngredients();
 }
@@ -1096,9 +1329,17 @@ function loadFormula(id) {
   document.getElementById('musteriAdi').value = f.customer||'';
   document.getElementById('formulTarih').value = f.date||'';
   document.getElementById('yogunluk').value = f.density||1.60;
+  document.getElementById('formulNot').value = f.notes||'';
+  document.getElementById('lotSayisi').value = 1;
+  document.getElementById('karMarji').value = 0;
+  document.getElementById('kdvOran').value = 0;
+  document.getElementById('pesinIskonto').value = 0;
+  document.getElementById('vadeAy').value = 0;
+  document.getElementById('vadeFaiz').value = 0;
   currentIngredients = JSON.parse(JSON.stringify(f.ingredients));
   renderIngredients();
   document.getElementById('resultArea').style.display='none';
+  document.getElementById('lotKarPanel').style.display='none';
   showToast('✅ '+f.name+' yüklendi');
 }
 
@@ -1181,6 +1422,99 @@ function calculate() {
     </td>
     <td class="num">100%</td>
   </tr>`;
+  // Lot / Kar / KDV hesabı
+  const lot = parseInt(document.getElementById('lotSayisi').value)||1;
+  const karPct = parseFloat(document.getElementById('karMarji').value)||0;
+  const kdvPct = parseFloat(document.getElementById('kdvOran').value)||0;
+  const karFiyat = totalCostTRY * (1 + karPct/100);
+  const kdvTutar = karFiyat * kdvPct/100;
+  const satisFiyat = karFiyat + kdvTutar;
+
+  // Vadeli / Peşin hesabı
+  const pesinIskonto = parseFloat(document.getElementById('pesinIskonto').value)||0;
+  const vadeAy = parseInt(document.getElementById('vadeAy').value)||0;
+  const vadeFaizAylik = parseFloat(document.getElementById('vadeFaiz').value)||0;
+  const pesinFiyat = satisFiyat * (1 - pesinIskonto/100);
+  const vadeliFiyat = satisFiyat * (1 + (vadeFaizAylik/100) * vadeAy);
+  const vadeFarki = vadeliFiyat - satisFiyat;
+  const aylikOdeme = vadeAy > 0 ? vadeliFiyat / vadeAy : 0;
+
+  const lotPanel = document.getElementById('lotKarPanel');
+  if(karPct > 0 || kdvPct > 0 || lot > 1 || pesinIskonto > 0 || vadeAy > 0) {
+    lotPanel.style.display = 'block';
+    document.getElementById('resLotCost').textContent = totalCostTRY.toFixed(2) + ' ₺';
+    document.getElementById('resLotKg').textContent = totalKg.toFixed(3) + ' kg · ' + perKgTRY.toFixed(2) + ' ₺/kg';
+    document.getElementById('resKarFiyat').textContent = karFiyat.toFixed(2) + ' ₺';
+    document.getElementById('resKarPct').textContent = karPct > 0 ? '+' + karPct + '% kar = +' + (totalCostTRY*karPct/100).toFixed(2) + ' ₺' : 'Kar marjı girilmedi';
+    document.getElementById('resKdvTutar').textContent = kdvTutar.toFixed(2) + ' ₺';
+    document.getElementById('resKdvPct').textContent = kdvPct > 0 ? '%' + kdvPct + ' KDV' : 'KDV girilmedi';
+    document.getElementById('resSatisFiyat').textContent = satisFiyat.toFixed(2) + ' ₺';
+    document.getElementById('resSatisSub').textContent = (satisFiyat/usdRate).toFixed(2) + ' $ · ' + (satisFiyat/eurRate).toFixed(2) + ' €';
+
+    const lotToplamPanel = document.getElementById('resLotToplamPanel');
+    if(lot > 1) {
+      lotToplamPanel.style.display = 'block';
+      document.getElementById('resToplamLotCost').textContent = (totalCostTRY*lot).toFixed(2) + ' ₺';
+      document.getElementById('resToplamLotSub').textContent = lot + ' lot × ' + totalCostTRY.toFixed(2) + ' ₺';
+      document.getElementById('resToplamSatis').textContent = (satisFiyat*lot).toFixed(2) + ' ₺';
+      document.getElementById('resToplamSatisSub').textContent = lot + ' lot × ' + satisFiyat.toFixed(2) + ' ₺';
+    } else {
+      lotToplamPanel.style.display = 'none';
+    }
+
+    // Vade paneli
+    const vadePanel = document.getElementById('vadePanel');
+    if(pesinIskonto > 0 || vadeAy > 0) {
+      vadePanel.style.display = 'block';
+      // Peşin
+      document.getElementById('resPesinFiyat').textContent = pesinFiyat.toFixed(2) + ' ₺';
+      document.getElementById('resPesinSub').textContent = pesinIskonto > 0
+        ? '%' + pesinIskonto + ' iskonto · −' + (satisFiyat - pesinFiyat).toFixed(2) + ' ₺'
+        : 'İskonto girilmedi';
+      // Vadeli
+      document.getElementById('resVadeliFiyat').textContent = vadeAy > 0 ? vadeliFiyat.toFixed(2) + ' ₺' : satisFiyat.toFixed(2) + ' ₺';
+      document.getElementById('resVadeliSub').textContent = vadeAy > 0
+        ? vadeAy + ' ay · %' + vadeFaizAylik + ' aylık faiz'
+        : 'Vade girilmedi';
+      // Vade farkı
+      document.getElementById('resVadeFarki').textContent = vadeAy > 0 ? '+' + vadeFarki.toFixed(2) + ' ₺' : '–';
+      document.getElementById('resVadeFarkiSub').textContent = vadeAy > 0
+        ? 'Nakit fiyata göre fark'
+        : '';
+      // Aylık ödeme
+      document.getElementById('resAylikOdeme').textContent = aylikOdeme > 0 ? aylikOdeme.toFixed(2) + ' ₺' : '–';
+      document.getElementById('resAylikSub').textContent = aylikOdeme > 0 ? 'Her ay · ' + vadeAy + ' taksit' : '';
+
+      // Ödeme planı tablosu
+      const tabloPanel = document.getElementById('vadeTabloPanel');
+      if(vadeAy > 0 && vadeAy <= 36) {
+        tabloPanel.style.display = 'block';
+        const tablo = document.getElementById('vadeTabloBody');
+        let rows = '<thead><tr><th>TAKSİT</th><th style="text-align:right">TUTAR</th><th style="text-align:right">KALANxBAKİYE</th></tr></thead><tbody>';
+        for(let i = 1; i <= vadeAy; i++) {
+          const kalan = vadeliFiyat - aylikOdeme * i;
+          rows += `<tr>
+            <td>${i}. ay</td>
+            <td class="num" style="color:#a78bfa">${aylikOdeme.toFixed(2)} ₺</td>
+            <td class="num" style="color:var(--muted)">${kalan > 0 ? kalan.toFixed(2) + ' ₺' : '–'}</td>
+          </tr>`;
+        }
+        rows += `<tr style="background:rgba(167,139,250,0.08)">
+          <td style="font-weight:700;color:#a78bfa">TOPLAM</td>
+          <td class="num" style="font-weight:700;color:#a78bfa">${vadeliFiyat.toFixed(2)} ₺</td>
+          <td class="num" style="color:#f0b429">+${vadeFarki.toFixed(2)} ₺ vade farkı</td>
+        </tr></tbody>`;
+        tablo.innerHTML = rows;
+      } else {
+        tabloPanel.style.display = 'none';
+      }
+    } else {
+      vadePanel.style.display = 'none';
+    }
+  } else {
+    lotPanel.style.display = 'none';
+  }
+
   document.getElementById('resultArea').style.display='block';
   document.getElementById('resultArea').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -1195,6 +1529,7 @@ function saveFormula() {
     customer: document.getElementById('musteriAdi').value,
     date: document.getElementById('formulTarih').value,
     density: parseFloat(document.getElementById('yogunluk').value)||1.60,
+    notes: document.getElementById('formulNot').value||'',
     ingredients: JSON.parse(JSON.stringify(currentIngredients))
   };
   const idx = data.formulas.findIndex(f=>f.name===name);
@@ -1206,28 +1541,73 @@ function saveFormula() {
 // ======== FORMULA LIST ========
 function renderFormulaList() {
   const el = document.getElementById('formulaList');
-  if(!data.formulas.length){ el.innerHTML='<div class="empty">Formül bulunamadı</div>'; return; }
-  el.innerHTML = data.formulas.map(f=>{
+  const q = (document.getElementById('formulSearch')||{value:''}).value.toLowerCase();
+  const cusFilter = (document.getElementById('formulCusFilter')||{value:''}).value;
+  // Update customer filter dropdown
+  const cusFilterEl = document.getElementById('formulCusFilter');
+  if(cusFilterEl) {
+    const current = cusFilterEl.value;
+    const customers = [...new Set(data.formulas.map(f=>f.customer).filter(Boolean))];
+    cusFilterEl.innerHTML = '<option value="">Tüm Müşteriler</option>' +
+      customers.map(c=>`<option value="${c}" ${c===current?'selected':''} >${c}</option>`).join('');
+  }
+  const filtered = data.formulas.filter(f =>
+    (!q || f.name.toLowerCase().includes(q) || (f.customer||'').toLowerCase().includes(q)) &&
+    (!cusFilter || f.customer === cusFilter)
+  );
+  document.getElementById('formulCount').textContent = '('+filtered.length+'/'+data.formulas.length+')';
+  if(!filtered.length){ el.innerHTML='<div class="empty">Formül bulunamadı</div>'; return; }
+  el.innerHTML = filtered.map(f=>{
     let cost=0;
     f.ingredients.forEach(ing=>{
       const mat=data.materials.find(m=>m.id===ing.materialId);
-      const p=mat?mat.price:0;
+      const p=mat?priceToTRY(mat.price, mat.currency||'TRY'):0;
       const kg=ing.unit==='gr'?ing.amount/1000:ing.amount;
       cost+=p*kg;
     });
     const colors = {ALTIN:'#f0b429',BRONZ:'#cd7f32',GÜMÜŞ:'#aaa',SEDEF:'#8fbc8f','ZT-109':'#f5a623'};
     const col = Object.keys(colors).find(k=>f.name.toUpperCase().includes(k));
-    return `<div class="fcard" onclick="loadFormula(${f.id});showTab('hesapla')">
-      ${col?`<span class="color-dot" style="background:${colors[col]}"></span>`:''}
-      <span class="fcard-name">${f.name}</span>
-      <span class="fcard-cost">${cost>0?cost.toFixed(2)+' ₺':'fiyat gir'}</span>
-      <div class="fcard-meta">
-        <span class="badge badge-gold">${f.ingredients.length} hammadde</span>
-        ${f.date?`<span class="badge badge-blue">${f.date}</span>`:''}
-        ${f.totalL?`<span class="badge badge-green">L=${f.totalL}kg</span>`:''}
+    return `<div class="fcard">
+      <div onclick="loadFormula(${f.id});showTab('hesapla')" style="cursor:pointer">
+        ${col?`<span class="color-dot" style="background:${colors[col]}"></span>`:''}
+        <span class="fcard-name">${f.name}</span>
+        ${f.customer?`<span style="font-size:10px;color:var(--muted);margin-left:6px">👤 ${f.customer}</span>`:''}
+        <span class="fcard-cost">${cost>0?cost.toFixed(2)+' ₺':'fiyat gir'}</span>
+        <div class="fcard-meta" style="margin-top:4px">
+          <span class="badge badge-gold">${f.ingredients.length} hammadde</span>
+          ${f.date?`<span class="badge badge-blue">${f.date}</span>`:''}
+          ${f.totalL?`<span class="badge badge-green">L=${f.totalL}kg</span>`:''}
+          ${f.notes?`<span class="badge badge-blue">📝 not</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:7px">
+        <button class="btn btn-outline btn-sm" onclick="loadFormula(${f.id});showTab('hesapla')">⚡ Yükle</button>
+        <button class="btn btn-outline btn-sm" onclick="cloneFormula(${f.id})">📋 Kopyala</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteFormula(${f.id})">× Sil</button>
       </div>
     </div>`;
   }).join('');
+}
+
+function cloneFormula(id) {
+  const f = data.formulas.find(x=>x.id===id);
+  if(!f) return;
+  const copy = JSON.parse(JSON.stringify(f));
+  copy.id = Date.now();
+  copy.name = f.name + ' - KOPYA';
+  copy.date = new Date().toISOString().split('T')[0];
+  data.formulas.push(copy);
+  save();
+  renderFormulaList();
+  showToast('✅ Kopyalandı: ' + copy.name);
+}
+
+function deleteFormula(id) {
+  if(!confirm('Bu formülü silmek istiyor musunuz?')) return;
+  data.formulas = data.formulas.filter(f=>f.id!==id);
+  save();
+  renderFormulaList();
+  showToast('Formül silindi');
 }
 
 // ======== MATERIALS ========
@@ -1266,7 +1646,10 @@ function renderMaterialList() {
     } else {
       convHint = '<span style="color:var(--muted);font-size:11px">fiyat girilmedi</span>';
     }
-    return `<div class="mat-row-cur">
+    const histBtn = m.priceHistory && m.priceHistory.length
+      ? `<button onclick="showPriceHistory(${m.id})" title="Fiyat geçmişi" style="width:22px;height:22px;border-radius:5px;border:1px solid rgba(26,155,191,0.4);background:rgba(26,155,191,0.1);color:var(--nx-teal);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">📈</button>`
+      : '';
+    return `<div class="mat-row-cur" style="grid-template-columns:1fr 60px 88px 68px auto 30px">
       <div><div class="mat-name">${m.name}</div><div class="mat-sup">${m.supplier||'–'} · ${m.unit}</div></div>
       <select onchange="updateMatCurrencyById(${m.id},this.value)" style="padding:5px 4px;font-size:11px">
         <option value="TRY" ${cur==='TRY'?'selected':''}>₺ TL</option>
@@ -1277,6 +1660,7 @@ function renderMaterialList() {
         onchange="updateMatPriceById(${m.id},this.value)"
         title="${cur==='USD'?'Dolar':'cur'==='EUR'?'Euro':'Lira'} fiyat / ${m.unit}">
       <div style="font-size:10px;text-align:right;line-height:1.6">${convHint}</div>
+      ${histBtn}
       <button class="del-btn" onclick="deleteMaterial(${m.id})">×</button>
     </div>`;
   }).join('');
@@ -1285,7 +1669,14 @@ function renderMaterialList() {
 function updateMatPriceById(id,val) {
   const mat=data.materials.find(m=>m.id===id);
   if(mat){
-    mat.price=parseFloat(val)||0;
+    const newPrice = parseFloat(val)||0;
+    // Fiyat geçmişi kaydet
+    if(newPrice !== mat.price && mat.price > 0) {
+      if(!mat.priceHistory) mat.priceHistory = [];
+      mat.priceHistory.unshift({price: mat.price, currency: mat.currency||'TRY', date: new Date().toISOString().split('T')[0]});
+      if(mat.priceHistory.length > 10) mat.priceHistory = mat.priceHistory.slice(0,10);
+    }
+    mat.price = newPrice;
     save();
     renderFormulaList();
     renderIngredients();
@@ -1318,42 +1709,277 @@ function deleteMaterial(id) {
 }
 
 // ======== SUPPLIERS ========
+let activeSupId = null;
+let editingSupMatId = null;
+
 function addSupplier() {
-  const name=document.getElementById('supName').value.trim();
+  const name = document.getElementById('supName').value.trim();
   if(!name){showToast('Firma adı girin!',true);return;}
-  data.suppliers.push({id:Date.now(),name,
-    contact:document.getElementById('supContact').value,
-    materials:document.getElementById('supMaterials').value
+  data.suppliers.push({
+    id: Date.now(),
+    name,
+    contact: document.getElementById('supContact').value.trim(),
+    address: document.getElementById('supAddress').value.trim(),
+    materials: [] // now array of material objects
   });
   save();
   document.getElementById('supName').value='';
   document.getElementById('supContact').value='';
-  document.getElementById('supMaterials').value='';
+  document.getElementById('supAddress').value='';
   renderSupplierList();
   updateSupplierDropdowns();
   showToast('✅ Eklendi: '+name);
 }
 
 function renderSupplierList() {
-  const el=document.getElementById('supplierList');
-  if(!data.suppliers.length){el.innerHTML='<div class="empty">Tedarikçi bulunamadı</div>';return;}
-  el.innerHTML=data.suppliers.map(s=>`
-    <div class="fcard">
-      <div class="fcard-name" style="font-size:15px">${s.name}</div>
+  const el = document.getElementById('supplierList');
+  const q = (document.getElementById('supSearch')||{value:''}).value.toLowerCase();
+  const filtered = data.suppliers.filter(s =>
+    !q || s.name.toLowerCase().includes(q) || (s.contact||'').toLowerCase().includes(q)
+  );
+  document.getElementById('supCount').textContent = '('+data.suppliers.length+' kayıt)';
+  if(!filtered.length){el.innerHTML='<div class="empty">Tedarikçi bulunamadı</div>';return;}
+  el.innerHTML = filtered.map(s => {
+    // support both old string format and new array format
+    const mats = Array.isArray(s.materials)
+      ? s.materials
+      : (s.materials ? s.materials.split(',').map(m=>({name:m.trim()})) : []);
+    const matCount = mats.filter(m=>m&&m.name).length;
+    return `
+    <div class="fcard" onclick="showSupplierDetail(${s.id})">
+      <div class="fcard-name" style="font-size:15px">🏭 ${s.name}</div>
       ${s.contact?`<div style="font-size:11px;color:var(--muted);margin-top:2px">📞 ${s.contact}</div>`:''}
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">${s.materials||'–'}</div>
-      <button class="del-btn" style="position:absolute;right:12px;top:12px" onclick="deleteSupplier(${s.id})">×</button>
-    </div>`).join('');
+      ${s.address?`<div style="font-size:11px;color:var(--muted)">📍 ${s.address}</div>`:''}
+      <div style="margin-top:5px">
+        ${matCount?`<span class="badge badge-gold">📦 ${matCount} Hammadde</span>`:'<span style="font-size:10px;color:var(--muted)">Hammadde girilmemiş</span>'}
+      </div>
+      <button class="del-btn" style="position:absolute;right:12px;top:12px" onclick="event.stopPropagation();deleteSupplier(${s.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function showSupplierDetail(id) {
+  const s = data.suppliers.find(x=>x.id===id);
+  if(!s) return;
+  activeSupId = id;
+  cancelEditSupplier();
+  cancelSupMaterial();
+
+  document.getElementById('supPanelTitle').textContent = '🏭 ' + s.name;
+  // support old string format
+  if(!Array.isArray(s.materials)) {
+    s.materials = s.materials ? s.materials.split(',').map(m=>({id:Date.now()+Math.random(),name:m.trim(),category:'',price:0,unit:'kg',currency:'TRY'})).filter(m=>m.name) : [];
+    save();
+  }
+  document.getElementById('supPanelSub').textContent = s.materials.length + ' hammadde';
+  renderSupPanelInfo(s);
+  renderSupPanelMaterials(s);
+  document.getElementById('supDetailPanel').style.display = 'block';
+  document.getElementById('supDetailPanel').scrollTop = 0;
+}
+
+function renderSupPanelInfo(s) {
+  document.getElementById('supPanelInfo').innerHTML = `
+    <div class="card-title">📇 Firma Bilgileri</div>
+    <div style="display:grid;gap:7px">
+      ${s.contact?`<div style="font-size:13px">📞 <strong>İletişim:</strong> <a href="tel:${s.contact}" style="color:var(--nx-teal)">${s.contact}</a></div>`:''}
+      ${s.address?`<div style="font-size:13px">📍 <strong>Adres/Not:</strong> ${s.address}</div>`:''}
+      ${!s.contact&&!s.address?'<div style="color:var(--muted);font-size:12px">Bilgi girilmemiş</div>':''}
+    </div>`;
+}
+
+function openEditSupplier() {
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  document.getElementById('editSupName').value = s.name;
+  document.getElementById('editSupContact').value = s.contact||'';
+  document.getElementById('editSupAddress').value = s.address||'';
+  document.getElementById('supEditForm').style.display = 'block';
+  document.getElementById('supEditForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveEditSupplier() {
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  const name = document.getElementById('editSupName').value.trim();
+  if(!name){showToast('Firma adı girin!',true);return;}
+  s.name = name;
+  s.contact = document.getElementById('editSupContact').value.trim();
+  s.address = document.getElementById('editSupAddress').value.trim();
+  save();
+  cancelEditSupplier();
+  document.getElementById('supPanelTitle').textContent = '🏭 ' + s.name;
+  renderSupPanelInfo(s);
+  updateSupplierDropdowns();
+  showToast('✅ Tedarikçi güncellendi');
+}
+
+function cancelEditSupplier() {
+  const el = document.getElementById('supEditForm');
+  if(el) el.style.display = 'none';
+}
+
+function renderSupPanelMaterials(s) {
+  const el = document.getElementById('supPanelMaterials');
+  const mats = s.materials || [];
+  document.getElementById('supPanelSub').textContent = mats.length + ' hammadde';
+  if(!mats.length){
+    el.innerHTML='<div class="empty">Henüz hammadde eklenmemiş. "+ Hammadde Ekle" ile ekleyin.</div>';
+    return;
+  }
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+  el.innerHTML = mats.map(m => {
+    const cur = m.currency||'TRY';
+    let priceStr = '–';
+    if(m.price > 0) {
+      if(cur==='USD') priceStr = `$${m.price} <span style="color:var(--muted);font-size:10px">= ${(m.price*usdRate).toFixed(2)}₺</span>`;
+      else if(cur==='EUR') priceStr = `€${m.price} <span style="color:var(--muted);font-size:10px">= ${(m.price*eurRate).toFixed(2)}₺</span>`;
+      else priceStr = `${m.price}₺`;
+    }
+    const catColors = {polimer:'badge-gold',katki:'badge-blue',boya:'badge-green',kimyasal:'badge-gold',dolgu:'badge-blue'};
+    return `
+    <div class="fcard" style="cursor:default;padding:10px 13px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;color:var(--text)">${m.name}</div>
+          <div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+            ${m.category?`<span class="badge ${catColors[m.category]||'badge-gold'}">${m.category}</span>`:''}
+            <span style="font-size:11px;color:var(--muted)">${m.unit||'kg'}</span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--green)">${priceStr}</div>
+          <div style="display:flex;gap:5px;margin-top:4px;justify-content:flex-end">
+            <button class="btn btn-outline btn-sm" onclick="openEditSupMat('${m.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSupMat('${m.id}')">×</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddSupMaterial() {
+  editingSupMatId = null;
+  document.getElementById('supMatName').value='';
+  document.getElementById('supMatPrice').value='';
+  document.getElementById('supMatCat').value='polimer';
+  document.getElementById('supMatUnit').value='kg';
+  document.getElementById('supMatCurrency').value='TRY';
+  // populate datalist with existing material names
+  document.getElementById('supMatDatalist').innerHTML =
+    data.materials.map(m=>`<option value="${m.name}">`).join('');
+  document.getElementById('supMaterialForm').style.display='block';
+  document.getElementById('supMaterialForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function openEditSupMat(matId) {
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  const m = s.materials.find(x=>String(x.id)===String(matId));
+  if(!m) return;
+  editingSupMatId = matId;
+  document.getElementById('supMatName').value = m.name;
+  document.getElementById('supMatPrice').value = m.price||'';
+  document.getElementById('supMatCat').value = m.category||'polimer';
+  document.getElementById('supMatUnit').value = m.unit||'kg';
+  document.getElementById('supMatCurrency').value = m.currency||'TRY';
+  document.getElementById('supMatDatalist').innerHTML =
+    data.materials.map(x=>`<option value="${x.name}">`).join('');
+  document.getElementById('supMaterialForm').style.display='block';
+  document.getElementById('supMaterialForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveSupMaterial() {
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  const name = document.getElementById('supMatName').value.trim();
+  if(!name){showToast('Hammadde adı girin!',true);return;}
+  const matData = {
+    id: editingSupMatId || (Date.now()+'_'+Math.floor(Math.random()*1000)),
+    name,
+    category: document.getElementById('supMatCat').value,
+    price: parseFloat(document.getElementById('supMatPrice').value)||0,
+    unit: document.getElementById('supMatUnit').value,
+    currency: document.getElementById('supMatCurrency').value
+  };
+
+  // 1) Tedarikçinin kendi listesini güncelle
+  if(editingSupMatId) {
+    const idx = s.materials.findIndex(x=>String(x.id)===String(editingSupMatId));
+    if(idx>=0) s.materials[idx] = matData;
+  } else {
+    s.materials.push(matData);
+  }
+
+  // 2) Ana hammadde listesini tam senkronize et
+  const existing = data.materials.find(m => m.name.toLowerCase() === name.toLowerCase());
+  if(existing) {
+    // Mevcut hammaddeyi güncelle
+    existing.price    = matData.price;
+    existing.currency = matData.currency;
+    existing.unit     = matData.unit;
+    existing.category = matData.category;
+    existing.supplier = s.name;
+  } else {
+    // Hammadde yoksa ana listeye de ekle
+    data.materials.push({
+      id:       Date.now(),
+      name:     matData.name,
+      category: matData.category,
+      price:    matData.price,
+      unit:     matData.unit,
+      currency: matData.currency,
+      supplier: s.name
+    });
+  }
+
+  save();
+  cancelSupMaterial();
+  renderSupPanelMaterials(s);
+  updateSupplierDropdowns();
+  // Hammadde listesi açıksa yenile
+  if(document.getElementById('tab-hammaddeler').classList.contains('active')) renderMaterialList();
+  showToast('✅ ' + (editingSupMatId?'Güncellendi':'Eklendi') + ': ' + name);
+  editingSupMatId = null;
+}
+
+function cancelSupMaterial() {
+  const el = document.getElementById('supMaterialForm');
+  if(el) el.style.display = 'none';
+  editingSupMatId = null;
+}
+
+function deleteSupMat(matId) {
+  if(!confirm('Bu hammaddeyi tedarikçiden kaldırmak istiyor musunuz?')) return;
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  s.materials = s.materials.filter(m=>String(m.id)!==String(matId));
+  save();
+  renderSupPanelMaterials(s);
+  showToast('Hammadde kaldırıldı');
+}
+
+function closeSupDetail() {
+  document.getElementById('supDetailPanel').style.display='none';
+  activeSupId = null;
+  renderSupplierList();
 }
 
 function deleteSupplier(id) {
-  data.suppliers=data.suppliers.filter(s=>s.id!==id);
-  save(); renderSupplierList();
+  if(!confirm('Bu tedarikçiyi silmek istiyor musunuz?')) return;
+  data.suppliers = data.suppliers.filter(s=>s.id!==id);
+  save();
+  renderSupplierList();
+  updateSupplierDropdowns();
+  showToast('Tedarikçi silindi');
 }
 
 function updateSupplierDropdowns() {
   const opts='<option value="">Seçiniz...</option>'+data.suppliers.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
-  document.getElementById('matSupplier').innerHTML=opts;
+  const el = document.getElementById('matSupplier');
+  if(el) el.innerHTML=opts;
 }
 
 function setCurrency(mode) {
@@ -1688,6 +2314,299 @@ function updateCustomerDropdown() {
     if(inp) inp.setAttribute('list','musteriDatalist');
   }
   dl.innerHTML = data.customers.map(c=>`<option value="${c.name}">`).join('');
+}
+
+
+// ======== KAR / LOT / KDV ========
+function updateLotCalc() {
+  const resultArea = document.getElementById('resultArea');
+  if(resultArea && resultArea.style.display !== 'none') calculate();
+}
+
+// ======== FORMÜL KOPYALA ========
+function copyFormula() {
+  const name = document.getElementById('formulAdi').value.trim();
+  if(!currentIngredients.length){showToast('Önce hammadde ekleyin!',true);return;}
+  const copyName = (name||'Formül') + ' - KOPYA';
+  document.getElementById('formulAdi').value = copyName;
+  document.getElementById('musteriAdi').value = '';
+  document.getElementById('formulTarih').value = new Date().toISOString().split('T')[0];
+  showToast('✅ Formül kopyalandı: ' + copyName);
+}
+
+// ======== PDF / TEKLİF ========
+function printOffer() {
+  const name = document.getElementById('formulAdi').value||'–';
+  const customer = document.getElementById('musteriAdi').value||'–';
+  const date = document.getElementById('formulTarih').value||'–';
+  const not = document.getElementById('formulNot').value||'';
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+
+  let totalKg=0, totalCostTRY=0;
+  const rows=[];
+  currentIngredients.forEach(ing=>{
+    const mat = data.materials.find(m=>m.id===ing.materialId);
+    const rawPrice = mat ? mat.price : 0;
+    const cur = getEffectiveCurrency(mat);
+    const priceTRY = priceToTRY(rawPrice, cur);
+    const kgAmt = ing.unit==='gr' ? ing.amount/1000 : ing.amount;
+    const costTRY = priceTRY * kgAmt;
+    totalKg += kgAmt; totalCostTRY += costTRY;
+    rows.push({name:ing.name, amount:ing.amount, unit:ing.unit, costTRY});
+  });
+  const perKg = totalKg>0 ? totalCostTRY/totalKg : 0;
+  const lot = parseInt(document.getElementById('lotSayisi').value)||1;
+  const kar = parseFloat(document.getElementById('karMarji').value)||0;
+  const kdv = parseFloat(document.getElementById('kdvOran').value)||0;
+  const karFiyat = totalCostTRY * (1 + kar/100);
+  const kdvTutar = karFiyat * kdv/100;
+  const satisFiyat = karFiyat + kdvTutar;
+
+  // Vade / Peşin
+  const pesinIskonto = parseFloat(document.getElementById('pesinIskonto').value)||0;
+  const vadeAy = parseInt(document.getElementById('vadeAy').value)||0;
+  const vadeFaiz = parseFloat(document.getElementById('vadeFaiz').value)||0;
+  const pesinFiyat = satisFiyat * (1 - pesinIskonto/100);
+  const vadeliFiyat = satisFiyat * (1 + (vadeFaiz/100) * vadeAy);
+  const aylikOdeme = vadeAy > 0 ? vadeliFiyat / vadeAy : 0;
+
+  const rowsHtml = rows.map(r=>`
+    <tr>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee">${r.name}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${r.amount} ${r.unit}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${r.costTRY.toFixed(2)} ₺</td>
+    </tr>`).join('');
+
+  // Ödeme planı (max 36 ay)
+  let odemeTabloHtml = '';
+  if(vadeAy > 0 && vadeAy <= 36) {
+    let taksitRows = '';
+    for(let i=1;i<=vadeAy;i++){
+      taksitRows += `<tr>
+        <td style="padding:4px 8px;border-bottom:1px solid #eee">${i}. ay</td>
+        <td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;color:#7c3aed">${aylikOdeme.toFixed(2)} ₺</td>
+        <td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right;color:#888">${(vadeliFiyat - aylikOdeme*i > 0 ? (vadeliFiyat - aylikOdeme*i).toFixed(2) + ' ₺' : '–')}</td>
+      </tr>`;
+    }
+    odemeTabloHtml = `
+      <div style="margin-top:10px;border-top:1px solid #eee;padding-top:10px">
+        <div style="font-weight:700;color:#7c3aed;font-size:12px;margin-bottom:6px">📅 ÖDEME PLANI (${vadeAy} AY)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="background:#f5f0ff">
+            <th style="padding:4px 8px;text-align:left;border-bottom:2px solid #7c3aed">Taksit</th>
+            <th style="padding:4px 8px;text-align:right;border-bottom:2px solid #7c3aed">Tutar</th>
+            <th style="padding:4px 8px;text-align:right;border-bottom:2px solid #7c3aed">Kalan Bakiye</th>
+          </tr></thead>
+          <tbody>${taksitRows}</tbody>
+          <tfoot><tr style="background:#f5f0ff">
+            <td style="padding:4px 8px;font-weight:700;color:#7c3aed">TOPLAM</td>
+            <td style="padding:4px 8px;text-align:right;font-weight:700;color:#7c3aed">${vadeliFiyat.toFixed(2)} ₺</td>
+            <td style="padding:4px 8px;text-align:right;color:#d97706">+${(vadeliFiyat-satisFiyat).toFixed(2)} ₺ vade farkı</td>
+          </tr></tfoot>
+        </table>
+      </div>`;
+  }
+
+  document.getElementById('offerBody').innerHTML = `
+    <div style="border:2px solid #1a9bbf;border-radius:8px;padding:16px;background:#fff;color:#111">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid #eee;padding-bottom:10px">
+        <div>
+          <div style="font-size:18px;font-weight:800;letter-spacing:1px;color:#00637d">NEXGEN</div>
+          <div style="font-size:10px;color:#888;letter-spacing:2px">MALİYET HESAPLAMA</div>
+        </div>
+        <div style="text-align:right;font-size:12px;color:#555">
+          <div><strong>Tarih:</strong> ${date}</div>
+          <div><strong>Müşteri:</strong> ${customer}</div>
+        </div>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:#00637d;margin-bottom:10px">📋 ${name}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px">
+        <thead><tr style="background:#f0f8ff">
+          <th style="padding:5px 8px;text-align:left;border-bottom:2px solid #1a9bbf">Hammadde</th>
+          <th style="padding:5px 8px;text-align:right;border-bottom:2px solid #1a9bbf">Miktar</th>
+          <th style="padding:5px 8px;text-align:right;border-bottom:2px solid #1a9bbf">Maliyet</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div style="background:#f0f8ff;border-radius:6px;padding:10px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between"><span>Toplam Ağırlık:</span><strong>${totalKg.toFixed(3)} kg</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Ham Maliyet (1 lot):</span><strong>${totalCostTRY.toFixed(2)} ₺</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Kg Başına:</span><strong>${perKg.toFixed(2)} ₺/kg</strong></div>
+        ${kar>0?`<div style="display:flex;justify-content:space-between"><span>Kar Marjı (%${kar}):</span><strong>${(totalCostTRY*kar/100).toFixed(2)} ₺</strong></div>`:''}
+        ${kdv>0?`<div style="display:flex;justify-content:space-between"><span>KDV (%${kdv}):</span><strong>${kdvTutar.toFixed(2)} ₺</strong></div>`:''}
+        <div style="display:flex;justify-content:space-between;border-top:2px solid #1a9bbf;padding-top:6px;margin-top:6px;font-size:15px">
+          <span><strong>Satış Fiyatı (Nakit):</strong></span><strong style="color:#00637d">${satisFiyat.toFixed(2)} ₺</strong>
+        </div>
+        ${lot>1?`<div style="display:flex;justify-content:space-between;color:#666;font-size:11px"><span>${lot} lot toplam:</span><span>${(satisFiyat*lot).toFixed(2)} ₺</span></div>`:''}
+      </div>
+      ${pesinIskonto>0||vadeAy>0 ? `
+      <div style="border:1px solid #e9d5ff;border-radius:6px;padding:10px;margin-bottom:8px">
+        <div style="font-weight:700;color:#7c3aed;font-size:12px;margin-bottom:8px">💳 ÖDEME SEÇENEKLERİ</div>
+        ${pesinIskonto>0?`
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #e9d5ff">
+          <span>💵 <strong>Peşin Fiyat</strong> <span style="color:#888;font-size:11px">(%${pesinIskonto} iskonto)</span></span>
+          <strong style="color:#16a34a;font-size:15px">${pesinFiyat.toFixed(2)} ₺</strong>
+        </div>`:''}
+        ${vadeAy>0?`
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #e9d5ff">
+          <span>📅 <strong>Vadeli Fiyat</strong> <span style="color:#888;font-size:11px">(${vadeAy} ay, %${vadeFaiz} aylık faiz)</span></span>
+          <strong style="color:#7c3aed;font-size:15px">${vadeliFiyat.toFixed(2)} ₺</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0">
+          <span>💰 Aylık Taksit</span>
+          <strong style="color:#7c3aed">${aylikOdeme.toFixed(2)} ₺ × ${vadeAy} ay</strong>
+        </div>`:''}
+      </div>
+      ${odemeTabloHtml}` : ''}
+      ${not?`<div style="font-size:11px;color:#555;border-top:1px solid #eee;padding-top:8px;margin-top:8px"><strong>Not:</strong> ${not}</div>`:''}
+    </div>`;
+  document.getElementById('offerModal').classList.add('open');
+}
+
+// ======== FİYAT GEÇMİŞİ ========
+function showPriceHistory(id) {
+  const m = data.materials.find(x=>x.id===id);
+  if(!m) return;
+  const hist = m.priceHistory||[];
+  document.getElementById('priceHistoryBody').innerHTML = `
+    <div style="font-weight:700;margin-bottom:8px;font-size:14px">${m.name}</div>
+    <div style="margin-bottom:8px"><span style="font-size:12px;color:var(--muted)">Güncel fiyat:</span>
+      <span style="font-weight:700;color:var(--green);margin-left:6px">${m.price} ${m.currency||'TRY'}</span>
+    </div>
+    ${hist.length ? `
+    <div class="section-label">ESKİ FİYATLAR</div>
+    ${hist.map(h=>`
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;margin-bottom:5px;font-size:12px">
+        <span>${h.price} ${h.currency||'TRY'}</span>
+        <span style="color:var(--muted)">${h.date}</span>
+      </div>`).join('')}` :
+    '<div class="empty">Henüz fiyat değişikliği yok</div>'}`;
+  document.getElementById('priceHistoryModal').classList.add('open');
+}
+
+// ======== MÜŞTERİ DÜZENLE ========
+function openEditCustomer() {
+  const c = (data.customers||[]).find(x=>x.id===activeCusId);
+  if(!c) return;
+  document.getElementById('editCusName').value = c.name;
+  document.getElementById('editCusContact').value = c.contact||'';
+  document.getElementById('editCusPhone').value = c.phone||'';
+  document.getElementById('editCusEmail').value = c.email||'';
+  document.getElementById('editCusNote').value = c.note||'';
+  document.getElementById('cusEditForm').style.display='block';
+  document.getElementById('cusEditForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveEditCustomer() {
+  const c = (data.customers||[]).find(x=>x.id===activeCusId);
+  if(!c) return;
+  const name = document.getElementById('editCusName').value.trim();
+  if(!name){showToast('Müşteri adı girin!',true);return;}
+  const oldName = c.name;
+  c.name = name;
+  c.contact = document.getElementById('editCusContact').value.trim();
+  c.phone = document.getElementById('editCusPhone').value.trim();
+  c.email = document.getElementById('editCusEmail').value.trim();
+  c.note = document.getElementById('editCusNote').value.trim();
+  // Formüllerdeki müşteri adını da güncelle
+  if(oldName !== name) {
+    (data.formulas||[]).forEach(f=>{ if(f.customer===oldName) f.customer=name; });
+  }
+  save();
+  cancelEditCustomer();
+  document.getElementById('cusPanelTitle').textContent = '🏢 ' + c.name;
+  showCustomerDetail(activeCusId); // refresh panel
+  updateCustomerDropdown();
+  showToast('✅ Müşteri güncellendi');
+}
+
+function cancelEditCustomer() {
+  const el = document.getElementById('cusEditForm');
+  if(el) el.style.display='none';
+}
+
+// ======== VERİ DIŞA / İÇE AKTAR ========
+function exportData() {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'nexgen_yedek_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Veriler dışa aktarıldı');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if(!imported.formulas && !imported.materials) {
+        showToast('Geçersiz dosya formatı!', true); return;
+      }
+      if(!confirm('Mevcut tüm veriler silinecek ve yedekten yüklenecek. Emin misiniz?')) return;
+      Object.assign(data, imported);
+      save();
+      location.reload();
+    } catch(err) {
+      showToast('Dosya okunamadı!', true);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportExcel() {
+  // CSV formatında dışa aktarma (Excel ile açılabilir)
+  let csv = 'NEXGEN MALİYET SİSTEMİ - VERİ DIŞA AKTARMA\n\n';
+  csv += 'HAMMADDELER\n';
+  csv += 'Ad,Kategori,Fiyat,Para Birimi,Birim,Tedarikçi\n';
+  data.materials.forEach(m => {
+    csv += `"${m.name}","${m.category||''}","${m.price}","${m.currency||'TRY'}","${m.unit}","${m.supplier||''}"\n`;
+  });
+  csv += '\nFORMÜLLER\n';
+  csv += 'Ad,Müşteri,Tarih,Toplam Maliyet(TL)\n';
+  data.formulas.forEach(f => {
+    let cost = 0;
+    f.ingredients.forEach(ing => {
+      const mat = data.materials.find(m=>m.id===ing.materialId);
+      if(mat) cost += priceToTRY(mat.price, mat.currency||'TRY') * (ing.unit==='gr'?ing.amount/1000:ing.amount);
+    });
+    csv += `"${f.name}","${f.customer||''}","${f.date||''}","${cost.toFixed(2)}"\n`;
+  });
+  csv += '\nMÜŞTERİLER\n';
+  csv += 'Ad,Yetkili,Telefon,Email\n';
+  (data.customers||[]).forEach(c => {
+    csv += `"${c.name}","${c.contact||''}","${c.phone||''}","${c.email||''}"\n`;
+  });
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'nexgen_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Excel dosyası oluşturuldu');
+}
+
+// ======== TEDARİKÇİ KARŞILAŞTIRMA ========
+function getSupplierCompare(matName) {
+  // Aynı hammaddeyi sunan farklı tedarikçileri bul
+  const results = [];
+  (data.suppliers||[]).forEach(s => {
+    const mats = Array.isArray(s.materials) ? s.materials : [];
+    const m = mats.find(m => m.name.toLowerCase() === matName.toLowerCase());
+    if(m && m.price > 0) {
+      results.push({supplier: s.name, price: m.price, currency: m.currency||'TRY', unit: m.unit||'kg'});
+    }
+  });
+  return results;
 }
 
 // ======== INIT ========
