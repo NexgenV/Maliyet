@@ -162,9 +162,85 @@
   /* Better touch targets */
   .del-btn { min-width:32px; min-height:32px; }
   .tab { padding: 14px 6px; }
+
+  /* ===== LOGIN SCREEN ===== */
+  #loginScreen {
+    position:fixed; inset:0; background:var(--bg); z-index:9999;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-box {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:32px 24px; width:100%; max-width:360px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .login-logo { text-align:center; margin-bottom:24px; }
+  .login-logo img { height:52px; }
+  .login-logo div { font-size:11px; color:var(--muted); letter-spacing:2px; margin-top:6px; text-transform:uppercase; }
+  .login-title { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700; color:var(--gold); margin-bottom:18px; text-align:center; }
+  .login-user-btn {
+    width:100%; padding:12px; margin-bottom:8px; border-radius:10px;
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); font-family:'Barlow',sans-serif; font-size:14px;
+    cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;
+    transition:all 0.2s;
+  }
+  .login-user-btn:hover { border-color:var(--nx-teal); background:var(--bg); }
+  .login-user-btn .user-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .login-user-btn .user-info { flex:1; }
+  .login-user-btn .user-name { font-weight:600; font-size:14px; }
+  .login-user-btn .user-role { font-size:11px; color:var(--muted); }
+  .login-pass-modal { display:none; margin-top:16px; }
+  .login-pass-modal.open { display:block; }
+  .login-error { color:var(--red); font-size:12px; margin-top:6px; text-align:center; min-height:18px; }
+
+  /* ===== ADMIN PANEL ===== */
+  .admin-tab { background:linear-gradient(135deg,rgba(239,68,68,0.1),rgba(239,68,68,0.05)); border-color:rgba(239,68,68,0.3) !important; }
+  .admin-tab.active { color:#f87171 !important; border-bottom-color:#ef4444 !important; }
+  .admin-badge { background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:4px; font-size:9px; font-weight:700; padding:1px 5px; margin-left:4px; }
+  .user-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
+  .user-card-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .user-card-info { flex:1; }
+  .user-card-name { font-weight:600; font-size:14px; }
+  .user-card-role { font-size:11px; color:var(--muted); margin-top:2px; }
+  .user-card-actions { display:flex; gap:6px; }
+  .locked-overlay { position:relative; }
+  .locked-msg { background:rgba(11,26,31,0.92); border:1px solid rgba(239,68,68,0.3); border-radius:var(--radius); padding:40px 20px; text-align:center; color:var(--muted); }
+  .locked-msg .lock-icon { font-size:36px; margin-bottom:10px; }
+  .locked-msg div { font-size:13px; }
+
+  /* ===== CURRENT USER BAR ===== */
+  .user-bar { display:flex; align-items:center; gap:8px; background:rgba(0,99,125,0.12); border:1px solid rgba(0,99,125,0.3); border-radius:8px; padding:5px 10px; cursor:pointer; transition:all 0.2s; }
+  .user-bar:hover { background:rgba(0,99,125,0.2); }
+  .user-bar-name { font-size:11px; font-weight:600; color:var(--nx-teal); }
+  .user-bar-role { font-size:10px; color:var(--muted); }
 </style>
 </head>
 <body>
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="data:image/png;base64,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" alt="NexGen" style="height:46px">
+      <div>MALİYET HESAPLAMA SİSTEMİ</div>
+    </div>
+    <div class="login-title">🔐 Giriş Yapın</div>
+    <div id="loginUserList"></div>
+    <div class="login-pass-modal" id="loginPassArea">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <button onclick="cancelLogin()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px">←</button>
+        <div>
+          <div style="font-weight:600;font-size:14px" id="loginSelectedName">Kullanıcı</div>
+          <div style="font-size:11px;color:var(--muted)" id="loginSelectedRole"></div>
+        </div>
+      </div>
+      <label>ŞİFRE</label>
+      <input type="password" id="loginPassword" placeholder="Şifrenizi girin" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="login-error" id="loginError"></div>
+      <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="doLogin()">GİRİŞ YAP</button>
+    </div>
+  </div>
+</div>
+
 <div id="noStorageBanner" style="display:none;background:#7c3a00;color:#ffd;padding:8px 14px;font-size:12px;text-align:center;position:sticky;top:0;z-index:200">
   ⚠️ Bu tarayıcıda veri kaydedilemez. Fiyatlar oturum boyunca geçerli olacak.
 </div>
@@ -175,6 +251,16 @@
     <div style="font-size:9px;color:#5a8fa0;letter-spacing:2px;text-transform:uppercase;margin-top:2px">MALİYET HESAPLAMA</div>
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="user-bar" onclick="logoutUser()" title="Çıkış yap">
+        <span id="headerUserEmoji" style="font-size:16px">👤</span>
+        <div>
+          <div class="user-bar-name" id="headerUserName">–</div>
+          <div class="user-bar-role" id="headerUserRole">–</div>
+        </div>
+        <span style="font-size:10px;color:var(--muted)">⏻</span>
+      </div>
+    </div>
     <div style="text-align:right;font-size:10px;color:var(--muted)" id="headerStats"></div>
     <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end">
       <!-- USD -->
@@ -202,6 +288,7 @@
   <div class="tab" onclick="showTab('formuller')">📋 FORMÜLLER</div>
   <div class="tab" onclick="showTab('hammaddeler')">📦 HAMMADDELER</div>
   <div class="tab" onclick="showTab('tedarikciler')">🏭 TEDARİKÇİLER</div>
+  <div class="tab admin-tab" id="adminTab" onclick="showTab('admin')" style="display:none">⚙️ YÖNETİM</div>
 </div>
 
 <!-- HESAPLA -->
@@ -280,6 +367,8 @@
 
 <!-- HAMMADDELER -->
 <div id="tab-hammaddeler" class="page">
+  <!-- ADMIN VIEW -->
+  <div id="hammaddeAdminView">
   <div class="card">
     <div class="card-title">📦 Yeni Hammadde Ekle</div>
     <div class="form-row">
@@ -314,6 +403,15 @@
     <div class="card-title">📋 Hammadde Listesi <span id="matCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
     <div style="margin-bottom:10px"><input type="text" id="matSearch" placeholder="🔍 Ara..." oninput="renderMaterialList()"></div>
     <div id="materialList"></div>
+  </div>
+  </div>
+  <!-- LOCKED VIEW -->
+  <div id="hammaddeLockedView" style="display:none">
+    <div class="locked-msg">
+      <div class="lock-icon">🔒</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold);margin-bottom:8px">YETKİSİZ ERİŞİM</div>
+      <div>Hammadde fiyatları ve listesi sadece <strong>Admin</strong> tarafından görüntülenebilir ve düzenlenebilir.</div>
+    </div>
   </div>
 </div>
 
@@ -359,9 +457,217 @@
   </div>
 </div>
 
+<!-- ADMIN PANELİ -->
+<div id="tab-admin" class="page">
+  <div class="card">
+    <div class="card-title">👥 Kullanıcı Yönetimi <span class="admin-badge">ADMIN</span></div>
+    <div class="section-label">YENİ KULLANICI OLUŞTUR</div>
+    <div class="form-row">
+      <div><label>KULLANICI ADI</label><input type="text" id="newUserName" placeholder="Ad Soyad"></div>
+      <div><label>ROL</label>
+        <select id="newUserRole">
+          <option value="user">👤 Normal Kullanıcı</option>
+          <option value="admin">🔴 Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div><label>ŞİFRE</label><input type="password" id="newUserPass" placeholder="Şifre"></div>
+      <div><label>EMOJİ / AVATAR</label>
+        <select id="newUserEmoji">
+          <option value="👤">👤 Varsayılan</option>
+          <option value="👨‍💼">👨‍💼 Erkek</option>
+          <option value="👩‍💼">👩‍💼 Kadın</option>
+          <option value="🧑‍🔬">🧑‍🔬 Teknik</option>
+          <option value="🧑‍💻">🧑‍💻 Bilgisayar</option>
+          <option value="🏭">🏭 Üretim</option>
+          <option value="📊">📊 Analiz</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="createUser()">+ KULLANICI OLUŞTUR</button>
+  </div>
+  <div class="card">
+    <div class="card-title">🗂 Mevcut Kullanıcılar</div>
+    <div id="userList"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔑 Admin Şifresi Değiştir</div>
+    <div class="form-row">
+      <div><label>YENİ ŞİFRE</label><input type="password" id="newAdminPass" placeholder="Yeni şifre"></div>
+      <div><label>TEKRAR GİRİN</label><input type="password" id="newAdminPass2" placeholder="Şifre tekrar"></div>
+    </div>
+    <button class="btn btn-outline" onclick="changeAdminPass()">🔐 ŞİFRE GÜNCELLE</button>
+  </div>
+  <div class="card" style="border-color:rgba(239,68,68,0.3)">
+    <div class="card-title" style="color:#f87171">⚠️ Tehlikeli Bölge</div>
+    <button class="btn btn-danger" onclick="resetAllData()">🗑 Tüm Verileri Sıfırla</button>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">Bu işlem geri alınamaz. Tüm formüller, hammaddeler ve tedarikçiler silinir.</div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
+// ======== AUTH SYSTEM ========
+const DEFAULT_USERS = [
+  { id: 1, name: 'Admin', role: 'admin', emoji: '🔴', password: 'admin123' },
+];
+
+function getUsers() {
+  try {
+    const u = localStorage.getItem('nexgen_users');
+    if (u) return JSON.parse(u);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_USERS));
+}
+
+function saveUsers(users) {
+  try { localStorage.setItem('nexgen_users', JSON.stringify(users)); } catch(e) {}
+}
+
+let currentUser = null;
+
+function renderLoginUsers() {
+  const users = getUsers();
+  const el = document.getElementById('loginUserList');
+  el.innerHTML = users.map(u => `
+    <button class="login-user-btn" onclick="selectUser(${u.id})">
+      <div class="user-avatar" style="background:${u.role==='admin'?'rgba(239,68,68,0.15)':'rgba(0,99,125,0.15)'}">${u.emoji}</div>
+      <div class="user-info">
+        <div class="user-name">${u.name}</div>
+        <div class="user-role">${u.role==='admin'?'🔴 Admin':'👤 Kullanıcı'}</div>
+      </div>
+      <span style="color:var(--muted)">›</span>
+    </button>`).join('');
+}
+
+let pendingUserId = null;
+
+function selectUser(id) {
+  const users = getUsers();
+  const user = users.find(u => u.id === id);
+  if (!user) return;
+  pendingUserId = id;
+  document.getElementById('loginSelectedName').textContent = user.name;
+  document.getElementById('loginSelectedRole').textContent = user.role === 'admin' ? '🔴 Admin' : '👤 Kullanıcı';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginPassArea').classList.add('open');
+  setTimeout(() => document.getElementById('loginPassword').focus(), 100);
+}
+
+function cancelLogin() {
+  pendingUserId = null;
+  document.getElementById('loginPassArea').classList.remove('open');
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+function doLogin() {
+  const users = getUsers();
+  const user = users.find(u => u.id === pendingUserId);
+  const pass = document.getElementById('loginPassword').value;
+  if (!user) return;
+  if (pass !== user.password) {
+    document.getElementById('loginError').textContent = '❌ Şifre yanlış!';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginPassword').focus();
+    return;
+  }
+  currentUser = user;
+  document.getElementById('loginScreen').style.display = 'none';
+  applyUserPermissions();
+  document.getElementById('headerUserName').textContent = user.name;
+  document.getElementById('headerUserRole').textContent = user.role === 'admin' ? '🔴 Admin' : '👤 Kullanıcı';
+  document.getElementById('headerUserEmoji').textContent = user.emoji;
+  showToast('✅ Hoşgeldiniz, ' + user.name + '!');
+}
+
+function logoutUser() {
+  if (!confirm('Çıkış yapmak istiyor musunuz?')) return;
+  currentUser = null;
+  cancelLogin();
+  document.getElementById('loginPassArea').classList.remove('open');
+  document.getElementById('loginScreen').style.display = 'flex';
+  renderLoginUsers();
+}
+
+function applyUserPermissions() {
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  // Admin tab visibility
+  document.getElementById('adminTab').style.display = isAdmin ? '' : 'none';
+  // Hammadde access
+  document.getElementById('hammaddeAdminView').style.display = isAdmin ? '' : 'none';
+  document.getElementById('hammaddeLockedView').style.display = isAdmin ? 'none' : '';
+}
+
+// ===== USER MANAGEMENT =====
+function renderUserList() {
+  const users = getUsers();
+  const el = document.getElementById('userList');
+  if (!el) return;
+  el.innerHTML = users.map(u => `
+    <div class="user-card">
+      <div class="user-card-avatar" style="background:${u.role==='admin'?'rgba(239,68,68,0.15)':'rgba(0,99,125,0.15)'}">${u.emoji}</div>
+      <div class="user-card-info">
+        <div class="user-card-name">${u.name} ${u.id===1?'<span class="admin-badge">SİLİNEMEZ</span>':''}</div>
+        <div class="user-card-role">${u.role==='admin'?'🔴 Admin':'👤 Normal Kullanıcı'}</div>
+      </div>
+      <div class="user-card-actions">
+        ${u.id !== 1 ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Sil</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function createUser() {
+  const name = document.getElementById('newUserName').value.trim();
+  const pass = document.getElementById('newUserPass').value;
+  const role = document.getElementById('newUserRole').value;
+  const emoji = document.getElementById('newUserEmoji').value;
+  if (!name) { showToast('Kullanıcı adı girin!', true); return; }
+  if (!pass || pass.length < 4) { showToast('Şifre en az 4 karakter olmalı!', true); return; }
+  const users = getUsers();
+  if (users.find(u => u.name.toLowerCase() === name.toLowerCase())) {
+    showToast('Bu isimde kullanıcı zaten var!', true); return;
+  }
+  users.push({ id: Date.now(), name, role, emoji, password: pass });
+  saveUsers(users);
+  document.getElementById('newUserName').value = '';
+  document.getElementById('newUserPass').value = '';
+  renderUserList();
+  showToast('✅ Kullanıcı oluşturuldu: ' + name);
+}
+
+function deleteUser(id) {
+  if (!confirm('Bu kullanıcıyı silmek istiyor musunuz?')) return;
+  const users = getUsers().filter(u => u.id !== id);
+  saveUsers(users);
+  renderUserList();
+  showToast('Kullanıcı silindi');
+}
+
+function changeAdminPass() {
+  const p1 = document.getElementById('newAdminPass').value;
+  const p2 = document.getElementById('newAdminPass2').value;
+  if (!p1 || p1.length < 4) { showToast('Şifre en az 4 karakter!', true); return; }
+  if (p1 !== p2) { showToast('Şifreler eşleşmiyor!', true); return; }
+  const users = getUsers();
+  const admin = users.find(u => u.id === 1);
+  if (admin) admin.password = p1;
+  saveUsers(users);
+  document.getElementById('newAdminPass').value = '';
+  document.getElementById('newAdminPass2').value = '';
+  showToast('✅ Admin şifresi güncellendi!');
+}
+
+function resetAllData() {
+  if (!confirm('TÜM VERİLER SİLİNECEK! Emin misiniz?')) return;
+  if (!confirm('Bu işlem GERİ ALINAMAZ. Devam etmek istiyor musunuz?')) return;
+  localStorage.removeItem('nexgen_v2');
+  location.reload();
+}
+
 // ======== DEFAULT DATA ========
 const DEFAULT_DATA = {
   settings: { currency: 'TRY', usdRate: 38.50 },
@@ -575,13 +881,17 @@ function showToast(msg, err) {
 
 // ======== TABS ========
 function showTab(name) {
-  ['hesapla','formuller','hammaddeler','tedarikciler'].forEach((t,i) => {
-    document.querySelectorAll('.tab')[i].classList.toggle('active', t===name);
-    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+  const tabNames = ['hesapla','formuller','hammaddeler','tedarikciler','admin'];
+  tabNames.forEach((t,i) => {
+    const tabEl = document.querySelectorAll('.tab')[i];
+    if(tabEl) tabEl.classList.toggle('active', t===name);
+    const pageEl = document.getElementById('tab-'+t);
+    if(pageEl) pageEl.classList.toggle('active', t===name);
   });
   if(name==='hammaddeler') renderMaterialList();
   if(name==='tedarikciler') renderSupplierList();
   if(name==='formuller') renderFormulaList();
+  if(name==='admin') renderUserList();
 }
 
 // ======== INGREDIENTS ========
@@ -612,7 +922,8 @@ function renderIngredients() {
       </div>
       <div>
         <input type="number" value="${price}" step="0.0001" placeholder="${symbol}/${ing.unit}"
-          onchange="updateMatPrice(${ing.materialId},this.value)" title="Birim fiyat (${symbol}/${ing.unit})">
+          onchange="updateMatPrice(${ing.materialId},this.value)" title="Birim fiyat (${symbol}/${ing.unit})"
+          ${(!currentUser || currentUser.role !== 'admin') ? 'readonly style="opacity:0.5;cursor:not-allowed"' : ''}>
         ${priceHint}
       </div>
       <div style="display:flex;align-items:center;gap:3px">
@@ -1016,6 +1327,7 @@ function setRateStatus(msg, color) {
 
 // ======== INIT ========
 function init() {
+  renderLoginUsers();
   if(!data.settings) data.settings = {currency:'TRY', usdRate:38.50, eurRate:41.50};
   document.getElementById('formulTarih').value=new Date().toISOString().split('T')[0];
   document.getElementById('usdRate').value = data.settings.usdRate || 38.50;
