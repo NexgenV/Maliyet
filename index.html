@@ -943,47 +943,47 @@ function onRateChange(type) {
 // ======== TCMB KUR ÇEKİCİ ========
 async function fetchRatesFromTCMB() {
   setRateStatus('⏳ Kur güncelleniyor...', '#f0b429');
-  // TCMB XML'ini CORS proxy üzerinden çek
-  const proxies = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?'
+  const btn = document.getElementById('refreshBtn');
+  if(btn) btn.style.opacity = '0.5';
+
+  // 3 farklı ücretsiz API dene - hepsi CORS destekli
+  const apis = [
+    {
+      url: 'https://api.frankfurter.app/latest?base=USD&symbols=TRY,EUR',
+      parse: d => ({ usd: d.rates?.TRY, eur: d.rates?.TRY / d.rates?.EUR })
+    },
+    {
+      url: 'https://open.er-api.com/v6/latest/USD',
+      parse: d => ({ usd: d.rates?.TRY, eur: d.rates?.TRY / d.rates?.EUR })
+    },
+    {
+      url: 'https://api.exchangerate-api.com/v4/latest/USD',
+      parse: d => ({ usd: d.rates?.TRY, eur: d.rates?.TRY / d.rates?.EUR })
+    }
   ];
-  const tcmbUrl = 'https://www.tcmb.gov.tr/kurlar/today.xml';
 
-  for(const proxy of proxies) {
+  for(const api of apis) {
     try {
-      const res = await fetch(proxy + encodeURIComponent(tcmbUrl), {signal: AbortSignal.timeout(8000)});
+      const res = await fetch(api.url, {signal: AbortSignal.timeout(6000)});
       if(!res.ok) continue;
-      const xml = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(xml, 'text/xml');
-
-      // USD
-      let usdRate = null, eurRate = null;
-      const currencies = doc.querySelectorAll('Currency');
-      currencies.forEach(c => {
-        const code = c.getAttribute('Kod') || c.getAttribute('CurrencyCode');
-        const buyEl = c.querySelector('ForexSelling') || c.querySelector('BanknoteSelling');
-        const val = buyEl ? parseFloat(buyEl.textContent.replace(',','.')) : null;
-        if(code === 'USD' && val) usdRate = val;
-        if(code === 'EUR' && val) eurRate = val;
-      });
-
-      if(usdRate && eurRate) {
-        document.getElementById('usdRate').value = usdRate.toFixed(4);
-        document.getElementById('eurRate').value = eurRate.toFixed(4);
-        data.settings.usdRate = usdRate;
-        data.settings.eurRate = eurRate;
+      const d = await res.json();
+      const rates = api.parse(d);
+      if(rates.usd && rates.eur && rates.usd > 1 && rates.eur > 1) {
+        document.getElementById('usdRate').value = rates.usd.toFixed(4);
+        document.getElementById('eurRate').value = rates.eur.toFixed(4);
+        data.settings.usdRate = rates.usd;
+        data.settings.eurRate = rates.eur;
         data.settings.rateDate = new Date().toLocaleDateString('tr-TR');
         save();
-        setRateStatus('✅ TCMB · ' + data.settings.rateDate, '#22c55e');
+        setRateStatus('✅ Güncel · ' + data.settings.rateDate, '#22c55e');
         if(document.getElementById('tab-hammaddeler').classList.contains('active')) renderMaterialList();
+        if(btn) btn.style.opacity = '1';
         return;
       }
-    } catch(e) { /* try next proxy */ }
+    } catch(e) { /* try next */ }
   }
-  // All proxies failed
   setRateStatus('⚠ Bağlantı yok · Manuel girin', '#ef4444');
+  if(btn) btn.style.opacity = '1';
 }
 
 function setRateStatus(msg, color) {
