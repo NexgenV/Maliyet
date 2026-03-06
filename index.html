@@ -134,17 +134,26 @@
   /* mat-row currency variant */
   .mat-row-cur { display:grid; grid-template-columns:1fr 60px 88px 68px 30px; gap:5px; align-items:center; background:var(--surface2); border-radius:8px; padding:9px 10px; border:1px solid var(--border); margin-bottom:6px; }
 
+  /* Dashboard 2-col grid */
+  .dash-two-col { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px; }
+  @media(max-width:520px){ .dash-two-col { grid-template-columns:1fr; } }
+
   @media(max-width:480px){
     .mat-row { grid-template-columns:1fr 88px 28px; gap:5px; }
     .mat-row-cur { grid-template-columns:1fr 55px 88px 28px; gap:4px; }
     .result-grid { grid-template-columns:1fr 1fr; }
     .form-row.three { grid-template-columns:1fr 1fr; }
-    .dtable th, .dtable td { font-size:11px; padding:5px 5px; }
+    .dtable th, .dtable td { font-size:10px; padding:4px 4px; }
     header { padding:8px 10px; }
+    /* Hammadde detay tablosu — birim fiyat sütununu mobilde gizle */
+    .dtable .hide-mobile { display:none; }
+    /* Scroll göstergesi */
+    .dtable-wrap::after { content:'← kaydır →'; display:block; font-size:10px; color:var(--muted); text-align:center; padding:4px; }
   }
   @media(max-width:360px){
     .mat-row-cur { grid-template-columns:1fr 50px 82px 26px; gap:3px; }
     .result-grid { grid-template-columns:1fr; }
+    .dtable th, .dtable td { font-size:9px; padding:3px 3px; }
   }
 
   /* PRINT STYLES */
@@ -293,16 +302,28 @@
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('hesapla')">🧮 HESAPLA</div>
+  <div class="tab active" onclick="showTab('dashboard')">🏠 ANASAYFA</div>
+  <div class="tab" onclick="showTab('hesapla')">🧮 HESAPLA</div>
   <div class="tab" onclick="showTab('formuller')">📋 FORMÜLLER</div>
   <div class="tab" onclick="showTab('hammaddeler')">📦 HAMMADDELER</div>
   <div class="tab" onclick="showTab('tedarikciler')">🏭 TEDARİKÇİLER</div>
   <div class="tab" id="musteriTab" onclick="showTab('musteriler')">👥 MÜŞTERİLER</div>
+  <div class="tab" id="kilavuzTab" onclick="showTab('kilavuz')">📖 KILAVUZ</div>
   <div class="tab admin-tab" id="adminTab" onclick="showTab('admin')" style="display:none">⚙️ YÖNETİM</div>
 </div>
 
 <!-- HESAPLA -->
-<div id="tab-hesapla" class="page active">
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="page active">
+  <div id="dashboardContent"></div>
+</div>
+
+<!-- KILAVUZ -->
+<div id="tab-kilavuz" class="page">
+  <div id="kilavuzContent"></div>
+</div>
+
+<div id="tab-hesapla" class="page">
 
   <!-- KUR AYARLARI -->
   <div class="cur-bar">
@@ -328,6 +349,10 @@
       <div><label>LOT SAYISI</label><input type="number" id="lotSayisi" placeholder="1" min="1" value="1" step="1" oninput="updateLotCalc()"></div>
       <div><label>KAR MARJI %</label><input type="number" id="karMarji" placeholder="0" min="0" step="0.1" value="0" oninput="updateLotCalc()"></div>
       <div><label>KDV %</label><input type="number" id="kdvOran" placeholder="0" min="0" step="1" value="0" oninput="updateLotCalc()"></div>
+    </div>
+    <div class="form-row">
+      <div><label>LOT AĞIRLIĞI — L (kg)</label><input type="number" id="totalL" placeholder="83.750" step="0.001"></div>
+      <div><label>SEVK AĞIRLIĞI — S (kg)</label><input type="number" id="totalS" placeholder="83.050" step="0.001"></div>
     </div>
     <!-- VADELİ FİYATLAMA -->
     <div style="background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.25);border-radius:10px;padding:12px;margin-top:4px">
@@ -439,8 +464,8 @@
 
     <div class="card" style="margin-top:12px">
       <div class="card-title">📊 Hammadde Detayı</div>
-      <div style="overflow-x:auto"><table class="dtable">
-        <thead><tr><th>HAMMADDE</th><th style="text-align:right">MİKTAR</th><th style="text-align:right">BİRİM FİYAT</th><th style="text-align:right">TOPLAM</th><th style="text-align:right">%</th></tr></thead>
+      <div class="dtable-wrap" style="overflow-x:auto"><table class="dtable">
+        <thead><tr><th>HAMMADDE</th><th style="text-align:right">MİKTAR</th><th class="hide-mobile" style="text-align:right">BİRİM FİYAT</th><th style="text-align:right">TOPLAM</th><th style="text-align:right">%</th></tr></thead>
         <tbody id="detailBody"></tbody>
       </table></div>
     </div>
@@ -455,8 +480,15 @@
   </div>
   <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
     <input type="text" id="formulSearch" placeholder="🔍 Formül ara..." oninput="renderFormulaList()" style="flex:1;min-width:140px">
-    <select id="formulCusFilter" onchange="renderFormulaList()" style="max-width:160px">
+    <select id="formulCusFilter" onchange="renderFormulaList()" style="max-width:150px">
       <option value="">Tüm Müşteriler</option>
+    </select>
+    <select id="formulSort" onchange="renderFormulaList()" style="max-width:140px">
+      <option value="date_desc">↓ En Yeni</option>
+      <option value="date_asc">↑ En Eski</option>
+      <option value="cost_desc">↓ Pahalı</option>
+      <option value="cost_asc">↑ Ucuz</option>
+      <option value="name_asc">A→Z İsim</option>
     </select>
   </div>
   <div id="formulaList"></div>
@@ -498,7 +530,24 @@
   </div>
   <div class="card">
     <div class="card-title">📋 Hammadde Listesi <span id="matCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
-    <div style="margin-bottom:10px"><input type="text" id="matSearch" placeholder="🔍 Ara..." oninput="renderMaterialList()"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <input type="text" id="matSearch" placeholder="🔍 Ara..." oninput="renderMaterialList()" style="flex:1;min-width:120px">
+      <select id="matCatFilter" onchange="renderMaterialList()" style="max-width:150px">
+        <option value="">Tüm Kategoriler</option>
+        <option value="polimer">🔵 Polimer/Ana</option>
+        <option value="katki">🟡 Katkı Maddesi</option>
+        <option value="boya">🟢 Boya/Renk</option>
+        <option value="kimyasal">🔴 Kimyasal</option>
+        <option value="dolgu">⚪ Dolgu</option>
+      </select>
+      <select id="matSortFilter" onchange="renderMaterialList()" style="max-width:140px">
+        <option value="">Sıralama</option>
+        <option value="name_asc">A→Z İsim</option>
+        <option value="name_desc">Z→A İsim</option>
+        <option value="price_asc">Ucuzdan Pahalıya</option>
+        <option value="price_desc">Pahalıdan Ucuza</option>
+      </select>
+    </div>
     <div id="materialList"></div>
   </div>
   </div>
@@ -636,7 +685,7 @@
 
 <!-- MÜŞTERİLER -->
 <div id="tab-musteriler" class="page">
-  <div class="card">
+  <div class="card" id="cusAddCard">
     <div class="card-title">👥 Yeni Müşteri Ekle</div>
     <div class="form-row">
       <div><label>MÜŞTERİ ADI / FİRMA</label><input type="text" id="cusName" placeholder="Firma / Kişi adı"></div>
@@ -758,6 +807,24 @@
   </div>
 </div>
 
+<!-- REVİZYON GEÇMİŞİ MODAL -->
+<div class="modal-overlay" id="revisionModal">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="modal-title">🔄 Revizyon Geçmişi</div>
+    <div id="revisionBody"></div>
+    <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('revisionModal')">KAPAT</button>
+  </div>
+</div>
+
+<!-- TEDARİKÇİ KARŞILAŞTIRMA MODAL -->
+<div class="modal-overlay" id="supCompareModal">
+  <div class="modal">
+    <div class="modal-title">⚖️ Tedarikçi Karşılaştırma</div>
+    <div id="supCompareBody"></div>
+    <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('supCompareModal')">KAPAT</button>
+  </div>
+</div>
+
 <!-- TEKLİF YAZDIR MODAL -->
 <div class="modal-overlay" id="offerModal">
   <div class="modal" style="max-height:90vh">
@@ -811,6 +878,19 @@
       <div><label>TEKRAR GİRİN</label><input type="password" id="newAdminPass2" placeholder="Şifre tekrar"></div>
     </div>
     <button class="btn btn-outline" onclick="changeAdminPass()">🔐 ŞİFRE GÜNCELLE</button>
+  </div>
+  <div class="card" style="border-color:rgba(107,163,255,0.3)">
+    <div class="card-title" style="color:#6ba3ff">🖨️ Teklif / Çıktı Ayarları</div>
+    <div class="form-row">
+      <div><label>FİRMA ADI</label><input type="text" id="offerCompanyName" placeholder="NEXGEN" oninput="saveOfferSettings()"></div>
+      <div><label>FİRMA SLOGANI</label><input type="text" id="offerCompanySlogan" placeholder="Maliyet Hesaplama" oninput="saveOfferSettings()"></div>
+    </div>
+    <div class="form-row">
+      <div><label>TELEFON</label><input type="text" id="offerCompanyPhone" placeholder="+90 5xx xxx xx xx" oninput="saveOfferSettings()"></div>
+      <div><label>E-POSTA</label><input type="text" id="offerCompanyEmail" placeholder="info@firma.com" oninput="saveOfferSettings()"></div>
+    </div>
+    <div class="form-full"><label>ADRES / WEB</label><input type="text" id="offerCompanyAddress" placeholder="Adres veya web sitesi" oninput="saveOfferSettings()"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px">Bu bilgiler teklif çıktısında görünür.</div>
   </div>
   <div class="card" style="border-color:rgba(34,197,94,0.3)">
     <div class="card-title" style="color:var(--green)">💾 Veri Yedekleme</div>
@@ -918,11 +998,21 @@ function logoutUser() {
 
 function applyUserPermissions() {
   const isAdmin = currentUser && currentUser.role === 'admin';
-  // Admin tab visibility
+  // Admin tab
   document.getElementById('adminTab').style.display = isAdmin ? '' : 'none';
-  // Hammadde access
+  // Hammadde fiyat girişi
   document.getElementById('hammaddeAdminView').style.display = isAdmin ? '' : 'none';
   document.getElementById('hammaddeLockedView').style.display = isAdmin ? 'none' : '';
+  // Tedarikçi düzenleme butonları (admin değilse gizle)
+  document.querySelectorAll('.sup-edit-btn,.sup-add-mat-btn,.sup-delete-btn').forEach(el=>{
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  // Müşteri ekleme formu (admin değilse gizle)
+  const cusAddCard = document.getElementById('cusAddCard');
+  if(cusAddCard) cusAddCard.style.display = isAdmin ? '' : 'none';
+  // Müşteri tab'ı normal kullanıcıda görünür ama sadece okuma
+  const musteriTab = document.getElementById('musteriTab');
+  if(musteriTab) musteriTab.style.display = '';
 }
 
 // ===== USER MANAGEMENT =====
@@ -1191,8 +1281,11 @@ function save() { lsSet('nexgen_v2', JSON.stringify(data)); updateHeaderStats();
 
 function updateHeaderStats() {
   const cusCount = (data.customers||[]).length;
+  const missingPrice = data.materials.filter(m=>!m.price||m.price===0).length;
   document.getElementById('headerStats').innerHTML =
-    data.formulas.length + ' formül · ' + data.materials.length + ' hammadde · ' + cusCount + ' müşteri';
+    data.formulas.length + ' formül · ' + data.materials.length + ' hammadde'
+    + (missingPrice ? ' · <span style="color:#f87171">⚠️ '+missingPrice+' fiyatsız</span>' : '')
+    + ' · ' + cusCount + ' müşteri';
 }
 
 function showToast(msg, err) {
@@ -1206,7 +1299,7 @@ function showToast(msg, err) {
 
 // ======== TABS ========
 function showTab(name) {
-  const tabNames = ['hesapla','formuller','hammaddeler','tedarikciler','musteriler','admin'];
+  const tabNames = ['dashboard','hesapla','formuller','hammaddeler','tedarikciler','musteriler','kilavuz','admin'];
   tabNames.forEach((t,i) => {
     const tabEl = document.querySelectorAll('.tab')[i];
     if(tabEl) tabEl.classList.toggle('active', t===name);
@@ -1214,6 +1307,8 @@ function showTab(name) {
     if(pageEl) pageEl.classList.toggle('active', t===name);
   });
   if(name==='hammaddeler') renderMaterialList();
+  if(name==='dashboard') renderDashboard();
+  if(name==='kilavuz') renderKilavuz();
   if(name==='tedarikciler') renderSupplierList();
   if(name==='formuller') renderFormulaList();
   if(name==='admin') renderUserList();
@@ -1298,6 +1393,8 @@ function clearForm() {
   document.getElementById('musteriAdi').value='';
   document.getElementById('yogunluk').value='1.60';
   document.getElementById('formulNot').value='';
+  document.getElementById('totalL').value='';
+  document.getElementById('totalS').value='';
   document.getElementById('lotSayisi').value=1;
   document.getElementById('karMarji').value=0;
   document.getElementById('kdvOran').value=0;
@@ -1330,12 +1427,19 @@ function loadFormula(id) {
   document.getElementById('formulTarih').value = f.date||'';
   document.getElementById('yogunluk').value = f.density||1.60;
   document.getElementById('formulNot').value = f.notes||'';
+  document.getElementById('totalL').value = f.totalL||'';
+  document.getElementById('totalS').value = f.totalS||'';
   document.getElementById('lotSayisi').value = 1;
   document.getElementById('karMarji').value = 0;
   document.getElementById('kdvOran').value = 0;
-  document.getElementById('pesinIskonto').value = 0;
-  document.getElementById('vadeAy').value = 0;
-  document.getElementById('vadeFaiz').value = 0;
+  // Restore pricing settings if saved
+  const pr = f.pricing||{};
+  document.getElementById('lotSayisi').value = pr.lotSayisi||1;
+  document.getElementById('karMarji').value = pr.karMarji||0;
+  document.getElementById('kdvOran').value = pr.kdvOran||0;
+  document.getElementById('pesinIskonto').value = pr.pesinIskonto||0;
+  document.getElementById('vadeAy').value = pr.vadeAy||0;
+  document.getElementById('vadeFaiz').value = pr.vadeFaiz||0;
   currentIngredients = JSON.parse(JSON.stringify(f.ingredients));
   renderIngredients();
   document.getElementById('resultArea').style.display='none';
@@ -1361,6 +1465,14 @@ function getEffectiveCurrency(mat) {
 }
 
 function calculate() {
+  // Fiyatsız hammadde ön uyarısı
+  const missingMats = currentIngredients.filter(ing=>{
+    const mat = data.materials.find(m=>m.id===ing.materialId);
+    return !mat || !mat.price || mat.price===0;
+  });
+  if(missingMats.length > 0) {
+    showToast('⚠️ '+missingMats.length+' hammaddede fiyat eksik: '+missingMats.map(i=>i.name).join(', '), true);
+  }
   const usdRate = getUsdRate();
   const eurRate = getEurRate();
   let totalKg=0, totalCostTRY=0, missing=0;
@@ -1530,12 +1642,38 @@ function saveFormula() {
     date: document.getElementById('formulTarih').value,
     density: parseFloat(document.getElementById('yogunluk').value)||1.60,
     notes: document.getElementById('formulNot').value||'',
+    totalL: parseFloat(document.getElementById('totalL').value)||null,
+    totalS: parseFloat(document.getElementById('totalS').value)||null,
+    pricing: {
+      lotSayisi: parseInt(document.getElementById('lotSayisi').value)||1,
+      karMarji: parseFloat(document.getElementById('karMarji').value)||0,
+      kdvOran: parseFloat(document.getElementById('kdvOran').value)||0,
+      pesinIskonto: parseFloat(document.getElementById('pesinIskonto').value)||0,
+      vadeAy: parseInt(document.getElementById('vadeAy').value)||0,
+      vadeFaiz: parseFloat(document.getElementById('vadeFaiz').value)||0
+    },
     ingredients: JSON.parse(JSON.stringify(currentIngredients))
   };
   const idx = data.formulas.findIndex(f=>f.name===name);
-  if(idx>=0) data.formulas[idx]=nf; else data.formulas.push(nf);
+  if(idx>=0) {
+    // Revizyon geçmişi kaydet
+    const old = data.formulas[idx];
+    if(!old.revisions) old.revisions = [];
+    old.revisions.unshift({
+      savedAt: new Date().toISOString(),
+      ingredients: JSON.parse(JSON.stringify(old.ingredients)),
+      notes: old.notes||'',
+      totalL: old.totalL, totalS: old.totalS, density: old.density
+    });
+    if(old.revisions.length > 10) old.revisions = old.revisions.slice(0,10);
+    nf.revisions = old.revisions;
+    data.formulas[idx] = nf;
+    showToast('✅ Güncellendi: '+name+' (revizyon kaydedildi)');
+  } else {
+    data.formulas.push(nf);
+    showToast('✅ Kaydedildi: '+name);
+  }
   save();
-  showToast('✅ Kaydedildi: '+name);
 }
 
 // ======== FORMULA LIST ========
@@ -1551,22 +1689,33 @@ function renderFormulaList() {
     cusFilterEl.innerHTML = '<option value="">Tüm Müşteriler</option>' +
       customers.map(c=>`<option value="${c}" ${c===current?'selected':''} >${c}</option>`).join('');
   }
-  const filtered = data.formulas.filter(f =>
+  let filtered = data.formulas.filter(f =>
     (!q || f.name.toLowerCase().includes(q) || (f.customer||'').toLowerCase().includes(q)) &&
     (!cusFilter || f.customer === cusFilter)
   );
-  document.getElementById('formulCount').textContent = '('+filtered.length+'/'+data.formulas.length+')';
-  if(!filtered.length){ el.innerHTML='<div class="empty">Formül bulunamadı</div>'; return; }
-  el.innerHTML = filtered.map(f=>{
+  // Sıralama
+  const sortMode = (document.getElementById('formulSort')||{value:'date_desc'}).value;
+  filtered = filtered.map(f=>{
     let cost=0;
     f.ingredients.forEach(ing=>{
       const mat=data.materials.find(m=>m.id===ing.materialId);
-      const p=mat?priceToTRY(mat.price, mat.currency||'TRY'):0;
-      const kg=ing.unit==='gr'?ing.amount/1000:ing.amount;
-      cost+=p*kg;
+      cost += mat ? priceToTRY(mat.price, mat.currency||'TRY') * (ing.unit==='gr'?ing.amount/1000:ing.amount) : 0;
     });
-    const colors = {ALTIN:'#f0b429',BRONZ:'#cd7f32',GÜMÜŞ:'#aaa',SEDEF:'#8fbc8f','ZT-109':'#f5a623'};
+    return {...f, _cost: cost};
+  });
+  if(sortMode==='cost_desc') filtered.sort((a,b)=>b._cost-a._cost);
+  else if(sortMode==='cost_asc') filtered.sort((a,b)=>a._cost-b._cost);
+  else if(sortMode==='name_asc') filtered.sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  else if(sortMode==='date_asc') filtered.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  else filtered.sort((a,b)=>(b.date||'').localeCompare(a.date||'')); // date_desc default
+
+  document.getElementById('formulCount').textContent = '('+filtered.length+'/'+data.formulas.length+')';
+  if(!filtered.length){ el.innerHTML='<div class="empty">Formül bulunamadı</div>'; return; }
+  const colors = {ALTIN:'#f0b429',BRONZ:'#cd7f32','GÜMÜŞ':'#aaa',SEDEF:'#8fbc8f','ZT-109':'#f5a623'};
+  el.innerHTML = filtered.map(f=>{
+    const cost = f._cost||0;
     const col = Object.keys(colors).find(k=>f.name.toUpperCase().includes(k));
+    const revCount = (f.revisions||[]).length;
     return `<div class="fcard">
       <div onclick="loadFormula(${f.id});showTab('hesapla')" style="cursor:pointer">
         ${col?`<span class="color-dot" style="background:${colors[col]}"></span>`:''}
@@ -1577,12 +1726,15 @@ function renderFormulaList() {
           <span class="badge badge-gold">${f.ingredients.length} hammadde</span>
           ${f.date?`<span class="badge badge-blue">${f.date}</span>`:''}
           ${f.totalL?`<span class="badge badge-green">L=${f.totalL}kg</span>`:''}
+          ${f.totalS?`<span class="badge" style="background:rgba(107,163,255,0.15);color:#6ba3ff">S=${f.totalS}kg</span>`:''}
           ${f.notes?`<span class="badge badge-blue">📝 not</span>`:''}
+          ${revCount?`<span class="badge" style="background:rgba(167,139,250,0.15);color:#a78bfa">🔄 ${revCount} rev</span>`:''}
         </div>
       </div>
-      <div style="display:flex;gap:5px;margin-top:7px">
+      <div style="display:flex;gap:5px;margin-top:7px;flex-wrap:wrap">
         <button class="btn btn-outline btn-sm" onclick="loadFormula(${f.id});showTab('hesapla')">⚡ Yükle</button>
         <button class="btn btn-outline btn-sm" onclick="cloneFormula(${f.id})">📋 Kopyala</button>
+        ${revCount?`<button class="btn btn-outline btn-sm" onclick="showRevisions(${f.id})" style="color:#a78bfa;border-color:rgba(167,139,250,0.4)">🔄 Revizyon</button>`:''}
         <button class="btn btn-danger btn-sm" onclick="deleteFormula(${f.id})">× Sil</button>
       </div>
     </div>`;
@@ -1630,8 +1782,19 @@ function addMaterial() {
 
 function renderMaterialList() {
   const q = (document.getElementById('matSearch').value||'').toLowerCase();
-  const filtered = data.materials.filter(m=>!q||m.name.toLowerCase().includes(q)||(m.supplier||'').toLowerCase().includes(q));
-  document.getElementById('matCount').textContent = '('+filtered.length+'/'+data.materials.length+')';
+  const catF = (document.getElementById('matCatFilter')||{value:''}).value;
+  const sortF = (document.getElementById('matSortFilter')||{value:''}).value;
+  let filtered = data.materials.filter(m=>
+    (!q || m.name.toLowerCase().includes(q)||(m.supplier||'').toLowerCase().includes(q)) &&
+    (!catF || m.category===catF)
+  );
+  if(sortF==='name_asc') filtered.sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  else if(sortF==='name_desc') filtered.sort((a,b)=>b.name.localeCompare(a.name,'tr'));
+  else if(sortF==='price_asc') filtered.sort((a,b)=>(priceToTRY(a.price,a.currency||'TRY'))-(priceToTRY(b.price,b.currency||'TRY')));
+  else if(sortF==='price_desc') filtered.sort((a,b)=>(priceToTRY(b.price,b.currency||'TRY'))-(priceToTRY(a.price,a.currency||'TRY')));
+  // Fiyatsız uyarısı
+  const missingPrice = data.materials.filter(m=>!m.price||m.price===0).length;
+  document.getElementById('matCount').textContent = '('+filtered.length+'/'+data.materials.length+(missingPrice?` · ⚠️ ${missingPrice} fiyatsız`:'') +')';
   const el = document.getElementById('materialList');
   if(!filtered.length){ el.innerHTML='<div class="empty">Sonuç bulunamadı</div>'; return; }
   const usdRate = getUsdRate();
@@ -1661,6 +1824,7 @@ function renderMaterialList() {
         title="${cur==='USD'?'Dolar':'cur'==='EUR'?'Euro':'Lira'} fiyat / ${m.unit}">
       <div style="font-size:10px;text-align:right;line-height:1.6">${convHint}</div>
       ${histBtn}
+      ${(() => { const sup = data.suppliers.filter(s=>Array.isArray(s.materials)&&s.materials.find(x=>x.name.toLowerCase()===m.name.toLowerCase()&&x.price>0)); return sup.length>1?`<button onclick="showSupplierCompare('${m.name.replace(/'/g,"\'")}')" title="Tedarikçi karşılaştır" style="width:22px;height:22px;border-radius:5px;border:1px solid rgba(240,180,41,0.4);background:rgba(240,180,41,0.1);color:#f0b429;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">⚖️</button>`:''; })()}
       <button class="del-btn" onclick="deleteMaterial(${m.id})">×</button>
     </div>`;
   }).join('');
@@ -2412,8 +2576,11 @@ function printOffer() {
     <div style="border:2px solid #1a9bbf;border-radius:8px;padding:16px;background:#fff;color:#111">
       <div style="display:flex;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid #eee;padding-bottom:10px">
         <div>
-          <div style="font-size:18px;font-weight:800;letter-spacing:1px;color:#00637d">NEXGEN</div>
-          <div style="font-size:10px;color:#888;letter-spacing:2px">MALİYET HESAPLAMA</div>
+          <div style="font-size:18px;font-weight:800;letter-spacing:1px;color:#00637d">${((data.settings||{}).offerCompany||{}).name||'NEXGEN'}</div>
+          <div style="font-size:10px;color:#888;letter-spacing:2px">${((data.settings||{}).offerCompany||{}).slogan||'MALİYET HESAPLAMA'}</div>
+          ${((data.settings||{}).offerCompany||{}).phone?`<div style="font-size:10px;color:#888">${((data.settings||{}).offerCompany||{}).phone}</div>`:''}
+          ${((data.settings||{}).offerCompany||{}).email?`<div style="font-size:10px;color:#888">${((data.settings||{}).offerCompany||{}).email}</div>`:''}
+          ${((data.settings||{}).offerCompany||{}).address?`<div style="font-size:10px;color:#888">${((data.settings||{}).offerCompany||{}).address}</div>`:''}
         </div>
         <div style="text-align:right;font-size:12px;color:#555">
           <div><strong>Tarih:</strong> ${date}</div>
@@ -2609,6 +2776,474 @@ function getSupplierCompare(matName) {
   return results;
 }
 
+
+// ======== DASHBOARD ========
+function renderDashboard() {
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const dateStr = now.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const formulCosts = data.formulas.map(f=>{
+    let cost=0;
+    f.ingredients.forEach(ing=>{
+      const mat=data.materials.find(m=>m.id===ing.materialId);
+      cost += mat ? priceToTRY(mat.price, mat.currency||'TRY') * (ing.unit==='gr'?ing.amount/1000:ing.amount) : 0;
+    });
+    return {...f, cost};
+  }).sort((a,b)=>b.cost-a.cost);
+
+  const avgCost = formulCosts.length ? formulCosts.reduce((s,f)=>s+f.cost,0)/formulCosts.length : 0;
+  const missingPriceMats = data.materials.filter(m=>!m.price||m.price===0);
+  const topMats = [...data.materials].filter(m=>m.price>0)
+    .map(m=>({...m, priceTRY: priceToTRY(m.price, m.currency||'TRY')}))
+    .sort((a,b)=>b.priceTRY-a.priceTRY).slice(0,5);
+  const recentFormuls = formulCosts.slice(0,5);
+  const recentCus = [...(data.customers||[])].slice(-4).reverse();
+  const companyName = ((data.settings||{}).offerCompany||{}).name || 'NEXGEN';
+
+  const el = document.getElementById('dashboardContent');
+  el.innerHTML = `
+    <!-- HOŞGELDIN BANNER -->
+    <div style="background:linear-gradient(135deg,#0e2530 0%,#0b3040 50%,#0e2530 100%);border:1px solid rgba(26,155,191,0.3);border-radius:14px;padding:18px 16px;margin-bottom:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;right:0;width:120px;height:120px;background:radial-gradient(circle,rgba(26,155,191,0.15),transparent 70%);pointer-events:none"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--gold);letter-spacing:1px">${companyName}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Maliyet Hesaplama Sistemi</div>
+          <div style="font-size:11px;color:var(--nx-teal);margin-top:6px">📅 ${dateStr}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:28px;font-weight:700;color:var(--text);font-family:'Barlow Condensed',sans-serif">${timeStr}</div>
+          <div style="font-size:11px;color:var(--muted)">👤 ${(currentUser||{}).name||'Kullanıcı'}</div>
+        </div>
+      </div>
+      <!-- Hızlı erişim butonları -->
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button onclick="showTab('hesapla')" style="background:var(--nx-blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">🧮 Yeni Hesaplama</button>
+        <button onclick="showTab('formuller')" style="background:rgba(240,180,41,0.15);color:var(--gold);border:1px solid rgba(240,180,41,0.3);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer">📋 Formüller</button>
+        <button onclick="showTab('musteriler')" style="background:rgba(107,163,255,0.12);color:#6ba3ff;border:1px solid rgba(107,163,255,0.3);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer">👥 Müşteriler</button>
+        <button onclick="showTab('kilavuz')" style="background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer">📖 Kılavuz</button>
+      </div>
+    </div>
+
+    <!-- İSTATİSTİK KARTLARI -->
+    <div class="result-grid" style="margin-bottom:14px">
+      <div class="result-item" onclick="showTab('formuller')" style="cursor:pointer">
+        <div class="ri-label">📋 FORMÜLLER</div>
+        <div class="ri-value" style="color:var(--gold)">${data.formulas.length}</div>
+        <div class="ri-sub">ort. ${avgCost.toFixed(0)} ₺</div>
+      </div>
+      <div class="result-item" onclick="showTab('hammaddeler')" style="cursor:pointer">
+        <div class="ri-label">📦 HAMMADDELER</div>
+        <div class="ri-value" style="color:var(--nx-teal)">${data.materials.length}</div>
+        <div class="ri-sub" style="color:${missingPriceMats.length?'#f87171':'#22c55e'}">
+          ${missingPriceMats.length ? '⚠️ '+missingPriceMats.length+' fiyatsız' : '✅ Tümü fiyatlı'}
+        </div>
+      </div>
+      <div class="result-item" onclick="showTab('tedarikciler')" style="cursor:pointer">
+        <div class="ri-label">🏭 TEDARİKÇİLER</div>
+        <div class="ri-value" style="color:#a78bfa">${(data.suppliers||[]).length}</div>
+        <div class="ri-sub"></div>
+      </div>
+      <div class="result-item" onclick="showTab('musteriler')" style="cursor:pointer">
+        <div class="ri-label">👥 MÜŞTERİLER</div>
+        <div class="ri-value" style="color:#6ba3ff">${(data.customers||[]).length}</div>
+        <div class="ri-sub"></div>
+      </div>
+    </div>
+
+    <!-- KUR DURUMU -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted);letter-spacing:1px;font-weight:600">💱 GÜNCEL KURLAR</span>
+      <span style="font-size:14px;font-weight:700;color:#6ba3ff">$ 1 USD = ${usdRate.toFixed(2)} ₺</span>
+      <span style="font-size:14px;font-weight:700;color:#4ade80">€ 1 EUR = ${eurRate.toFixed(2)} ₺</span>
+      <button onclick="fetchRatesFromTCMB()" style="margin-left:auto;background:rgba(26,155,191,0.1);color:var(--nx-teal);border:1px solid rgba(26,155,191,0.3);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">🔄 Güncelle</button>
+    </div>
+
+    ${missingPriceMats.length ? `
+    <!-- UYARI KARTI -->
+    <div style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:8px">⚠️ ${missingPriceMats.length} hammaddede fiyat girilmedi — hesaplamalar eksik çıkar</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${missingPriceMats.slice(0,8).map(m=>`<span onclick="showTab('hammaddeler')" style="cursor:pointer;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:5px;padding:3px 8px;font-size:11px;color:#fca5a5">${m.name}</span>`).join('')}
+        ${missingPriceMats.length>8?`<span style="font-size:11px;color:#f87171">+${missingPriceMats.length-8} daha...</span>`:''}
+      </div>
+    </div>` : ''}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <!-- Son Formüller -->
+      <div class="card" style="margin:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin:0">🏆 Son Formüller</div>
+          <button onclick="showTab('formuller')" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer">Tümü →</button>
+        </div>
+        ${recentFormuls.length ? recentFormuls.map((f,i)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="loadFormula(${f.id});showTab('hesapla')">
+            <div style="min-width:0">
+              <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+              <div style="font-size:10px;color:var(--muted)">${f.customer||'–'} · ${f.ingredients.length} madde</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;margin-left:8px">
+              <div style="font-size:12px;font-weight:700;color:var(--gold)">${f.cost>0?f.cost.toFixed(0)+' ₺':'–'}</div>
+            </div>
+          </div>`).join('') : '<div class="empty" style="font-size:12px">Henüz formül yok</div>'}
+      </div>
+
+      <!-- Son Müşteriler -->
+      <div class="card" style="margin:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin:0">👥 Müşteriler</div>
+          <button onclick="showTab('musteriler')" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer">Tümü →</button>
+        </div>
+        ${recentCus.length ? recentCus.map(c=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="showCustomerDetail(${c.id})">
+            <div style="min-width:0">
+              <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+              <div style="font-size:10px;color:var(--muted)">${c.contact||''}</div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:6px">${(data.formulas||[]).filter(f=>f.customer===c.name).length} formül</div>
+          </div>`).join('') : '<div class="empty" style="font-size:12px">Henüz müşteri yok</div>'}
+      </div>
+    </div>
+
+    <!-- En Pahalı Hammaddeler -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin:0">💎 En Pahalı Hammaddeler</div>
+        <button onclick="showTab('hammaddeler')" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer">Tümü →</button>
+      </div>
+      ${topMats.length ? topMats.map((m,i)=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:15px;min-width:22px;text-align:center">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span>
+            <div>
+              <div style="font-size:12px;font-weight:600">${m.name}</div>
+              <div style="font-size:10px;color:var(--muted)">${m.supplier||'–'}</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;font-weight:700;color:var(--nx-teal)">${m.priceTRY.toFixed(2)} ₺</div>
+            <div style="font-size:10px;color:var(--muted)">${m.price} ${m.currency||'TRY'}</div>
+          </div>
+        </div>`).join('') : '<div class="empty">Fiyatlı hammadde yok</div>'}
+    </div>
+  `;
+}
+
+
+// ======== KILAVUZ ========
+function renderKilavuz() {
+  const el = document.getElementById('kilavuzContent');
+  el.innerHTML = `
+  <!-- Başlık -->
+  <div style="background:linear-gradient(135deg,#0e2530,#0b3040);border:1px solid rgba(167,139,250,0.3);border-radius:14px;padding:18px;margin-bottom:14px;text-align:center">
+    <div style="font-size:32px;margin-bottom:6px">📖</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--gold);letter-spacing:2px">KULLANIM KILAVUZU</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">NexGen Maliyet Hesaplama Sistemi</div>
+  </div>
+
+  <!-- İçindekiler -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">📑 İçindekiler</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      ${[
+        ['1','🏠 Anasayfa'],['2','🧮 Hesapla'],['3','📋 Formüller'],
+        ['4','📦 Hammaddeler'],['5','🏭 Tedarikçiler'],['6','👥 Müşteriler'],
+        ['7','📅 Vadeli Fiyatlama'],['8','🖨️ Teklif & PDF'],['9','⚙️ Yönetim & Yedek'],['10','💡 İpuçları']
+      ].map(([n,t])=>`
+        <div onclick="document.getElementById('klv-${n}').scrollIntoView({behavior:'smooth'})"
+             style="padding:8px 10px;background:var(--surface2);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--nx-teal);border:1px solid var(--border)">
+          ${t}
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- 1. ANASAYFA -->
+  <div class="card" id="klv-1">
+    <div class="card-title" style="color:var(--nx-teal)">🏠 1. Anasayfa</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px">Sisteme giriş yaptıktan sonra doğrudan <strong style="color:var(--gold)">Anasayfa</strong> açılır. Buradan tüm sisteme genel bir bakış alabilirsiniz.</p>
+    ${klvBox([
+      ['📊','İstatistik Kartları','Toplam formül, hammadde, tedarikçi ve müşteri sayılarını tek bakışta görün. Kartlara tıklayarak ilgili sekmeye geçin.'],
+      ['💱','Güncel Kurlar','USD ve EUR kurları otomatik yüklenir. 🔄 Güncelle butonuyla anlık kuru çekebilirsiniz.'],
+      ['⚠️','Fiyat Uyarısı','Fiyat girilmemiş hammaddeler varsa kırmızı uyarı kutusu görünür. Tıklayarak hammaddeler sekmesine geçin.'],
+      ['🏆','Son Formüller','En yüksek maliyetli formüller listelenir. Tıklayarak formülü Hesapla sekmesine yükleyin.'],
+      ['👥','Müşteriler','Son eklenen müşteriler görünür. Tıklayarak müşteri detay sayfasını açın.'],
+    ])}
+  </div>
+
+  <!-- 2. HESAPLA -->
+  <div class="card" id="klv-2">
+    <div class="card-title" style="color:var(--nx-teal)">🧮 2. Hesapla Sekmesi</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px">Formül maliyeti hesaplamak için kullanılan <strong style="color:var(--gold)">ana çalışma alanı</strong>dır.</p>
+
+    <div style="font-size:12px;font-weight:700;color:#a78bfa;letter-spacing:1px;margin-bottom:8px">ADIM ADIM KULLANIM</div>
+    ${[
+      ['1️⃣','Formül bilgilerini girin','Formül adı, tarih, müşteri adı ve yoğunluğu doldurun.'],
+      ['2️⃣','Hammadde ekleyin','+ Hammadde Ekle butonuna basın. Hammaddeyi seçin, miktar ve birimi girin, EKLE deyin.'],
+      ['3️⃣','Lot/Kar/KDV girin (isteğe bağlı)','Kaç lot üretileceğini, kar marjını ve KDV oranını girebilirsiniz.'],
+      ['4️⃣','Hesapla','⚡ MALİYETİ HESAPLA butonuna basın. Sonuçlar altta görünür.'],
+      ['5️⃣','Kaydedin','💾 butonuyla formülü sisteme kaydedin. Aynı adla kaydedince üzerine yazar (eski versiyon revizyon olarak saklanır).'],
+    ].map(([n,t,d])=>`
+      <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:20px;min-width:28px">${n}</span>
+        <div><div style="font-size:12px;font-weight:700;color:var(--text)">${t}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${d}</div></div>
+      </div>`).join('')}
+
+    <div style="font-size:12px;font-weight:700;color:#a78bfa;letter-spacing:1px;margin:12px 0 8px">BUTONLAR</div>
+    ${klvBox([
+      ['💾','Kaydet','Formülü sisteme kaydeder. Aynı isimle kaydedince eski versiyon revizyon olarak saklanır.'],
+      ['📋','Kopyala','Mevcut formülü "-KOPYA" adıyla çoğaltır. Farklı müşteri için versiyon oluşturmak kolay.'],
+      ['🖨️','PDF / Teklif','Müşteriye gönderilebilir teklif çıktısı oluşturur. Tarayıcıdan yazdırın veya PDF kaydedin.'],
+      ['🗑','Temizle','Formu tamamen sıfırlar.'],
+      ['📂','Formül Yükle','Kayıtlı bir formülü temel alarak üzerine değişiklik yapabilirsiniz.'],
+    ])}
+  </div>
+
+  <!-- 3. FORMÜLLER -->
+  <div class="card" id="klv-3">
+    <div class="card-title" style="color:var(--nx-teal)">📋 3. Formüller Sekmesi</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px">Tüm kayıtlı formülleri listeler, arar, filtreler ve yönetir.</p>
+    ${klvBox([
+      ['🔍','Arama & Filtre','Formül adı veya müşteriye göre arama. Müşteri dropdown ile sadece o müşterinin formülleri gösterilir.'],
+      ['↕️','Sıralama','Tarih, maliyet veya isme göre sıralayabilirsiniz.'],
+      ['⚡','Yükle','Formülü Hesapla sekmesine yükler, hesaplama yapabilirsiniz.'],
+      ['📋','Kopyala','Formülü "-KOPYA" adıyla çoğaltır.'],
+      ['🔄','Revizyon','Formül her kaydedilişinde eski versiyon saklanır. Bu butonla geçmiş versiyonlara bakabilir veya geri dönebilirsiniz.'],
+      ['×','Sil','Formülü kalıcı siler.'],
+    ])}
+  </div>
+
+  <!-- 4. HAMMADDELER -->
+  <div class="card" id="klv-4">
+    <div class="card-title" style="color:var(--nx-teal)">📦 4. Hammaddeler Sekmesi</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px"><strong style="color:#f87171">Sadece Admin</strong> hammadde ekleyip fiyat düzenleyebilir. Normal kullanıcılar sadece görüntüler.</p>
+    ${klvBox([
+      ['➕','Hammadde Ekleme','Ad, kategori, fiyat, para birimi (₺/$/ €) ve birim (kg/gr/lt) girerek kaydedin.'],
+      ['💰','Fiyat Güncelleme','Listede doğrudan fiyat kutusuna yazın, otomatik kaydedilir. Bağlı tüm formüller güncellenir.'],
+      ['📈','Fiyat Geçmişi','Fiyat değişince eski fiyat tarihleriyle saklanır. 📈 butonu ile görüntüleyin.'],
+      ['⚖️','Tedarikçi Karşılaştırma','Aynı hammaddeyi farklı tedarikçiler sunuyorsa ⚖️ butonu çıkar. Fiyatları karşılaştırın.'],
+      ['🔍','Filtre & Sıralama','Kategoriye göre filtrele (polimer/boya/kimyasal...) veya fiyata/isme göre sırala.'],
+      ['💱','Döviz Dönüşümü','$ veya € girilen fiyatlar güncel kur ile TL\'ye otomatik çevrilir.'],
+    ])}
+  </div>
+
+  <!-- 5. TEDARİKÇİLER -->
+  <div class="card" id="klv-5">
+    <div class="card-title" style="color:var(--nx-teal)">🏭 5. Tedarikçiler Sekmesi</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px">Hammadde aldığınız firmaları ve bu firmaların sunduğu hammaddeleri yönetir.</p>
+    ${klvBox([
+      ['➕','Tedarikçi Ekle','Firma adı, iletişim ve adres bilgilerini girerek kaydedin.'],
+      ['📋','Detay Sayfası','Tedarikçiye tıklayın → tam ekran detay açılır. Firma bilgilerini düzenleyin.'],
+      ['📦','Hammadde Ekle','Detay sayfasında "+ Hammadde Ekle" ile tedarikçinin temin ettiği hammaddeleri kaydedin.'],
+      ['🔄','Otomatik Senkron','Tedarikçi hammaddesi kaydedilince ana hammadde listesi otomatik güncellenir. Fiyat değişikliği anında yansır.'],
+    ])}
+  </div>
+
+  <!-- 6. MÜŞTERİLER -->
+  <div class="card" id="klv-6">
+    <div class="card-title" style="color:var(--nx-teal)">👥 6. Müşteriler Sekmesi</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px">Müşteri kayıtlarını ve her müşteriye özel formülleri yönetir. Müşteri ekleme <strong style="color:#f87171">Admin yetkisi</strong> gerektirir.</p>
+    ${klvBox([
+      ['➕','Müşteri Ekle','Ad/firma, yetkili, telefon, e-posta ve not girerek kaydedin.'],
+      ['📋','Detay Sayfası','Müşteriye tıklayın → tam ekran detay açılır.'],
+      ['✏️','Düzenle','Detay sayfasında ✏️ Düzenle butonu ile müşteri bilgilerini güncelleyin.'],
+      ['📋','Formül Ekle','Detay sayfasında "+ Yeni Formül" ile o müşteriye formül ekleyin.'],
+      ['⚡','Hesapla','Müşterinin formülüne tıklayıp "⚡ Hesapla" diyerek Hesapla sekmesine yükleyin.'],
+    ])}
+  </div>
+
+  <!-- 7. VADELİ FİYATLAMA -->
+  <div class="card" id="klv-7">
+    <div class="card-title" style="color:var(--nx-teal)">📅 7. Vadeli Fiyatlama</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px">Hesapla sekmesinde <strong style="color:#a78bfa">📅 VADELİ FİYATLAMA</strong> bölümüne girin. Hesaplama yapınca peşin ve vadeli fiyatlar otomatik hesaplanır.</p>
+    ${klvBox([
+      ['💵','Peşin İskonto %','Peşin ödemelerde uygulanacak indirim. Peşin fiyat = Satış fiyatı × (1 − iskonto/100)'],
+      ['📅','Vade (Ay)','Kaç ay vadeli satış yapılacak. Aylık eşit taksit hesaplanır.'],
+      ['📈','Vade Faizi %','Aylık faiz oranı. Vadeli fiyat = Satış fiyatı × (1 + aylık faiz × ay sayısı)'],
+      ['📊','Ödeme Planı','1-36 ay arası girilirse her ayın taksiti ve kalan bakiyesi tablo olarak gösterilir.'],
+      ['💾','Kayıt','Vade değerleri formülle birlikte kaydedilir, sonraki açılışta otomatik yüklenir.'],
+    ])}
+
+    <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:8px;padding:10px;margin-top:10px">
+      <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">📌 ÖRNEK HESAPLAMA</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8">
+        Ham maliyet: 10.000 ₺ &nbsp;|&nbsp; Kar: %20 → 12.000 ₺ &nbsp;|&nbsp; KDV: %18 → 14.160 ₺<br>
+        Peşin (%5 iskonto): <strong style="color:#22c55e">13.452 ₺</strong><br>
+        Vadeli (6 ay, %2 aylık): 14.160 × 1,12 = <strong style="color:#a78bfa">15.859 ₺</strong> → <strong>2.643 ₺/ay</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. TEKLİF & PDF -->
+  <div class="card" id="klv-8">
+    <div class="card-title" style="color:var(--nx-teal)">🖨️ 8. Teklif & PDF Çıktısı</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px">Hesapladıktan sonra <strong style="color:var(--gold)">🖨️ butona</strong> basın. Müşteriye gönderilebilir profesyonel teklif çıkar.</p>
+    ${klvBox([
+      ['🏢','Firma Bilgileri','Yönetim → Teklif Ayarları bölümünden firma adı, slogan, telefon, e-posta ve adres girebilirsiniz. Teklif çıktısında görünür.'],
+      ['📋','İçerik','Hammadde listesi, maliyet özeti, kar/KDV detayı, satış fiyatı otomatik oluşur.'],
+      ['📅','Ödeme Seçenekleri','Peşin iskonto veya vade girdiyseniz teklif çıktısında "Ödeme Seçenekleri" bölümü eklenir.'],
+      ['📊','Ödeme Planı','Vadeli satışta taksit tablosu teklif içine dahil edilir.'],
+      ['🖨️','Yazdır/PDF','Tarayıcının yazdır penceresinden PDF olarak kaydedin veya yazıcıya gönderin.'],
+    ])}
+  </div>
+
+  <!-- 9. YÖNETİM & YEDEK -->
+  <div class="card" id="klv-9">
+    <div class="card-title" style="color:var(--nx-teal)">⚙️ 9. Yönetim & Yedekleme</div>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0 0 10px"><strong style="color:#f87171">Sadece Admin</strong> görebilir.</p>
+    ${klvBox([
+      ['👥','Kullanıcı Yönetimi','Yeni kullanıcı oluştur, rol ata (Admin / Normal). Normal kullanıcılar hammadde fiyatı göremez, müşteri ekleyemez.'],
+      ['🔐','Şifre Değiştir','Admin şifresini bu bölümden güncelleyebilirsiniz.'],
+      ['🖨️','Teklif Ayarları','Firma adı, slogan, iletişim bilgilerini girin. PDF çıktılarında görünür.'],
+      ['⬇️','Dışa Aktar (JSON)','Tüm verilerinizi JSON dosyası olarak yedekleyin. Düzenli yedek almanız önerilir.'],
+      ['⬆️','İçe Aktar (JSON)','Yedeği geri yükler. Mevcut tüm veriler silinir, yerine yedek yüklenir.'],
+      ['📊','Excel\'e Aktar','Verilerinizi CSV olarak indirin. Excel veya Google Sheets\'te açılır.'],
+      ['🗑','Verileri Sıfırla','TÜM verileri siler. Geri alınamaz! Önce yedek alın.'],
+    ])}
+  </div>
+
+  <!-- 10. İPUÇLARI -->
+  <div class="card" id="klv-10">
+    <div class="card-title" style="color:var(--nx-teal)">💡 10. İpuçları & Sık Sorulanlar</div>
+    ${[
+      ['❓','Hesaplama 0 ₺ çıkıyor','Hammaddelerin fiyatı girilmemiş olabilir. Hammaddeler sekmesinden fiyatları kontrol edin. Anasayfada ⚠️ uyarısı çıkar.'],
+      ['❓','Formül kaydedince eski versiyon kayboluyor mu','Hayır! Aynı isimle kaydedince eski versiyon "Revizyon" olarak saklanır. Formüller sekmesinde 🔄 butonuyla eski versiyona bakabilirsiniz.'],
+      ['❓','Döviz kuru nasıl güncellenir','Sağ üst köşedeki 🔄 butonuyla TCMB\'den otomatik çekilir. İnternet yoksa manuel girin.'],
+      ['❓','Veriler nereye kaydediliyor','Tarayıcının yerel belleğine (LocalStorage) kaydedilir. Tarayıcı geçmişi temizlenirse kaybolabilir. Yönetim → Dışa Aktar ile düzenli yedek alın.'],
+      ['❓','Normal kullanıcı ne yapabilir','Formül hesaplama, formül kaydetme, müşteri görüntüleme yapabilir. Hammadde fiyatı görme/düzenleme ve müşteri ekleme Admin yetkisi gerektirir.'],
+      ['❓','Aynı hammadde birden fazla tedarikçide var, hangisini kullanmalıyım','Hammaddeler sekmesinde ⚖️ butonu çıkar. Tıklayınca tedarikçi karşılaştırma açılır, en ucuzu vurgular.'],
+      ['❓','PDF teklife firma adımı nasıl eklerim','Yönetim sekmesi → Teklif / Çıktı Ayarları bölümünden firma bilgilerini girin.'],
+    ].map(([icon,q,a])=>`
+      <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">${icon} ${q}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">${a}</div>
+      </div>`).join('')}
+  </div>
+
+  <!-- Alt bilgi -->
+  <div style="text-align:center;padding:16px;color:var(--muted);font-size:11px">
+    NexGen Maliyet Hesaplama Sistemi · Sorularınız için sistem yöneticinize başvurun
+  </div>
+  `;
+}
+
+function klvBox(items) {
+  return `<div style="display:flex;flex-direction:column;gap:6px">${items.map(([icon,title,desc])=>`
+    <div style="display:flex;gap:10px;background:var(--surface2);border-radius:8px;padding:9px 10px;align-items:flex-start">
+      <span style="font-size:18px;min-width:26px;text-align:center">${icon}</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${title}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5">${desc}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+// ======== REVİZYON GEÇMİŞİ ========
+function showRevisions(id) {
+  const f = data.formulas.find(x=>x.id===id);
+  if(!f || !f.revisions || !f.revisions.length) return;
+  const usdRate = getUsdRate();
+  document.getElementById('revisionBody').innerHTML = `
+    <div style="font-weight:700;font-size:14px;margin-bottom:10px">${f.name} — Revizyon Geçmişi</div>
+    ${f.revisions.map((r,i)=>{
+      let cost=0;
+      (r.ingredients||[]).forEach(ing=>{
+        const mat=data.materials.find(m=>m.id===ing.materialId);
+        cost += mat ? priceToTRY(mat.price, mat.currency||'TRY') * (ing.unit==='gr'?ing.amount/1000:ing.amount) : 0;
+      });
+      return `<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:700;color:#a78bfa">Revizyon ${f.revisions.length - i}</span>
+          <span style="font-size:11px;color:var(--muted)">${r.savedAt ? r.savedAt.replace('T',' ').slice(0,16) : '–'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">${(r.ingredients||[]).length} hammadde · maliyet ≈ ${cost.toFixed(2)} ₺</div>
+        ${r.notes?`<div style="font-size:11px;color:var(--muted);margin-top:4px">📝 ${r.notes}</div>`:''}
+        ${r.totalL?`<div style="font-size:11px;color:var(--muted)">L=${r.totalL} kg</div>`:''}
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="restoreRevision(${id},${i})">↩ Bu Versiyona Dön</button>
+      </div>`;
+    }).join('')}`;
+  document.getElementById('revisionModal').classList.add('open');
+}
+
+function restoreRevision(formulaId, revIdx) {
+  const f = data.formulas.find(x=>x.id===formulaId);
+  if(!f || !f.revisions) return;
+  const rev = f.revisions[revIdx];
+  if(!confirm('Bu eski versiyona dönmek istiyor musunuz? Mevcut versiyon revizyon olarak saklanacak.')) return;
+  // Mevcut versiyonu revizyon olarak sakla
+  if(!f.revisions) f.revisions=[];
+  f.revisions.unshift({
+    savedAt: new Date().toISOString(),
+    ingredients: JSON.parse(JSON.stringify(f.ingredients)),
+    notes: f.notes||''
+  });
+  // Eski versiyonu geri yükle
+  f.ingredients = JSON.parse(JSON.stringify(rev.ingredients||[]));
+  f.notes = rev.notes||'';
+  if(rev.totalL) f.totalL = rev.totalL;
+  save();
+  closeModal('revisionModal');
+  renderFormulaList();
+  showToast('✅ Eski versiyona döndü: '+f.name);
+}
+
+// ======== TEDARİKÇİ KARŞILAŞTIRMA ========
+function showSupplierCompare(matName) {
+  const results = getSupplierCompare(matName);
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+  if(!results.length) { showToast('Karşılaştırılacak tedarikçi bulunamadı', true); return; }
+  results.sort((a,b) => priceToTRY(a.price,a.currency) - priceToTRY(b.price,b.currency));
+  const minPrice = priceToTRY(results[0].price, results[0].currency);
+  document.getElementById('supCompareBody').innerHTML = `
+    <div style="font-weight:700;font-size:14px;margin-bottom:12px">📦 ${matName}</div>
+    ${results.map((r,i)=>{
+      const priceTRY = priceToTRY(r.price, r.currency);
+      const diff = priceTRY - minPrice;
+      const isBest = i===0;
+      return `<div style="background:${isBest?'rgba(34,197,94,0.08)':'var(--surface2)'};border:1px solid ${isBest?'rgba(34,197,94,0.4)':'var(--border)'};border-radius:8px;padding:10px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            ${isBest?'<span style="font-size:11px;background:rgba(34,197,94,0.2);color:#22c55e;padding:2px 6px;border-radius:4px;margin-right:6px">EN UCUZ</span>':''}
+            <span style="font-weight:700">${r.supplier}</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;color:${isBest?'#22c55e':'var(--gold)'}">${priceTRY.toFixed(4)} ₺/${r.unit}</div>
+            <div style="font-size:10px;color:var(--muted)">${r.price} ${r.currency}</div>
+          </div>
+        </div>
+        ${diff>0?`<div style="font-size:11px;color:#f87171;margin-top:4px">En ucuzdan +${diff.toFixed(4)} ₺ fazla</div>`:''}
+      </div>`;
+    }).join('')}
+  `;
+  document.getElementById('supCompareModal').classList.add('open');
+}
+
+
+// ======== TEKLİF AYARLARI ========
+function saveOfferSettings() {
+  if(!data.settings) data.settings = {};
+  data.settings.offerCompany = {
+    name: document.getElementById('offerCompanyName').value||'NEXGEN',
+    slogan: document.getElementById('offerCompanySlogan').value||'Maliyet Hesaplama',
+    phone: document.getElementById('offerCompanyPhone').value||'',
+    email: document.getElementById('offerCompanyEmail').value||'',
+    address: document.getElementById('offerCompanyAddress').value||''
+  };
+  save();
+}
+
+function loadOfferSettings() {
+  const oc = (data.settings||{}).offerCompany||{};
+  const n = document.getElementById('offerCompanyName'); if(n) n.value = oc.name||'';
+  const s = document.getElementById('offerCompanySlogan'); if(s) s.value = oc.slogan||'';
+  const p = document.getElementById('offerCompanyPhone'); if(p) p.value = oc.phone||'';
+  const e = document.getElementById('offerCompanyEmail'); if(e) e.value = oc.email||'';
+  const a = document.getElementById('offerCompanyAddress'); if(a) a.value = oc.address||'';
+}
+
 // ======== INIT ========
 function init() {
   renderLoginUsers();
@@ -2624,6 +3259,8 @@ function init() {
   updateCustomerDropdown();
   updateHeaderStats();
   loadFormula(1);
+  loadOfferSettings();
+  renderDashboard();
   // Auto-fetch rates on load
   fetchRatesFromTCMB();
   if(!_lsOk) document.getElementById('noStorageBanner').style.display='block';
