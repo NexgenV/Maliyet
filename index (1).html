@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexGen Maliyet Hesaplama</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0b1a1f;
+    --surface:  #102530;
+    --surface2: #163040;
+    --border:   #1e4055;
+    --gold:     #1a9bbf;
+    --gold2:    #00637d;
+    --accent:   #00a8ce;
+    --green:    #22c55e;
+    --red:      #ef4444;
+    --text:     #d6edf5;
+    --muted:    #6a96a8;
+    --radius:   12px;
+    --nx-blue:  #00637d;
+    --nx-teal:  #1a9bbf;
+    --nx-dark:  #353630;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, #0e2530 0%, #0b1a1f 100%);
+    border-bottom: 2px solid var(--nx-blue);
+    padding: 10px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 6px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: 1px; color: var(--gold); }
+  .logo span { color: var(--text); font-weight: 400; }
+  .header-sub { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+
+  .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex:1; min-width:80px; padding:13px 8px; text-align:center; font-size:11px; font-weight:600; letter-spacing:0.5px; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; transition:all 0.2s; white-space:nowrap; }
+  .tab.active { color:var(--nx-teal); border-bottom-color:var(--nx-blue); }
+  .tab:hover:not(.active) { color:var(--text); background:var(--surface2); }
+
+  .page { display:none; padding:14px; }
+  .page.active { display:block; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
+  .card-title { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:1px; color:var(--gold); text-transform:uppercase; margin-bottom:12px; }
+
+  label { font-size:11px; color:var(--muted); font-weight:500; letter-spacing:0.5px; display:block; margin-bottom:4px; }
+  input, select, textarea { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 11px; color:var(--text); font-family:'Barlow',sans-serif; font-size:13px; transition:border-color 0.2s; outline:none; }
+  input:focus, select:focus { border-color:var(--nx-teal); }
+  input[type="number"] { text-align:right; }
+  select option { background:var(--surface); }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+  .form-row.three { grid-template-columns:1fr 1fr 1fr; }
+  .form-full { margin-bottom:8px; }
+
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 16px; border-radius:8px; font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; letter-spacing:1px; cursor:pointer; border:none; transition:all 0.2s; }
+  .btn-gold { background:var(--nx-blue); color:#fff; }
+  .btn-gold:hover { background:var(--gold2); }
+  .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+  .btn-danger { background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--red); }
+  .btn-sm { padding:6px 10px; font-size:11px; }
+  .btn-green { background:var(--green); color:#0f1117; }
+
+  .mat-row { display:grid; grid-template-columns:1fr 88px 76px 30px; gap:6px; align-items:center; background:var(--surface2); border-radius:8px; padding:9px 10px; border:1px solid var(--border); margin-bottom:6px; }
+  .mat-name { font-size:12px; font-weight:600; }
+  .mat-sup { font-size:10px; color:var(--muted); }
+  .del-btn { width:26px; height:26px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); border-radius:6px; color:var(--red); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:all 0.2s; }
+  .del-btn:hover { background:var(--red); color:white; }
+
+  .result-panel { background:linear-gradient(135deg,var(--surface2),var(--surface)); border:2px solid var(--nx-blue); border-radius:var(--radius); padding:18px; margin-top:14px; }
+  .result-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+  .result-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .result-item { background:var(--bg); border-radius:8px; padding:10px; }
+  .ri-label { font-size:10px; color:var(--muted); letter-spacing:0.5px; margin-bottom:3px; }
+  .ri-value { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:700; color:var(--nx-teal); }
+  .ri-sub { font-size:10px; color:var(--muted); }
+  .result-total { background:linear-gradient(135deg,var(--nx-blue),var(--nx-dark)); border:1px solid var(--nx-teal); border-radius:8px; padding:14px; text-align:center; }
+  .rt-label { font-size:10px; color:rgba(255,255,255,0.7); font-weight:600; letter-spacing:1px; }
+  .rt-value { font-family:'Barlow Condensed',sans-serif; font-size:34px; font-weight:800; color:#ffffff; line-height:1; }
+  .rt-sub { font-size:11px; color:rgba(255,255,255,0.6); }
+
+  .dtable { width:100%; border-collapse:collapse; }
+  .dtable th { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); padding:7px 8px; text-align:left; border-bottom:1px solid var(--border); }
+  .dtable td { padding:7px 8px; font-size:12px; border-bottom:1px solid rgba(46,51,72,0.4); }
+  .dtable tr:last-child td { border-bottom:none; }
+  .dtable td.num { text-align:right; font-weight:600; }
+  .dtable td.gt { color:var(--nx-teal); }
+
+  .fcard { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:13px; margin-bottom:9px; cursor:pointer; transition:all 0.2s; position:relative; }
+  .fcard:hover { border-color:var(--nx-teal); }
+  .fcard-name { font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:700; color:var(--nx-teal); }
+  .fcard-meta { font-size:11px; color:var(--muted); margin-top:3px; }
+  .fcard-cost { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700; color:var(--green); position:absolute; right:13px; top:13px; }
+
+  .badge { display:inline-block; padding:2px 7px; border-radius:20px; font-size:9px; font-weight:600; letter-spacing:0.5px; margin-right:3px; }
+  .badge-gold { background:rgba(0,99,125,0.2); color:var(--nx-teal); border:1px solid rgba(0,99,125,0.4); }
+  .badge-blue { background:rgba(61,122,237,0.15); color:var(--accent); border:1px solid rgba(61,122,237,0.3); }
+  .badge-green { background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); }
+
+  .section-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:6px 0 5px; border-bottom:1px solid var(--border); margin-bottom:9px; }
+
+  .empty { text-align:center; padding:30px 16px; color:var(--muted); font-size:12px; }
+
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--green); color:#0f1117; padding:11px 18px; border-radius:8px; font-weight:700; font-size:12px; z-index:9999; transition:transform 0.3s ease; white-space:nowrap; }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:flex-end; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border-radius:20px 20px 0 0; border-top:2px solid var(--gold); padding:18px; width:100%; max-width:560px; max-height:82vh; overflow-y:auto; }
+  .modal-title { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700; color:var(--gold); margin-bottom:14px; }
+
+  .color-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
+
+  /* CURRENCY TOGGLE */
+  .cur-bar { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:9px 12px; margin-bottom:12px; flex-wrap:wrap; row-gap:8px; }
+  .cur-label { font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+  .cur-toggle { display:flex; background:var(--bg); border-radius:8px; border:1px solid var(--border); overflow:hidden; }
+  .cur-btn { padding:6px 14px; font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; cursor:pointer; border:none; background:transparent; color:var(--muted); transition:all 0.2s; }
+  .cur-btn.active { background:var(--nx-blue); color:#fff; }
+  .cur-rate-wrap { display:flex; align-items:center; gap:6px; margin-left:auto; }
+  .cur-rate-wrap label { margin:0; white-space:nowrap; }
+  .cur-rate-wrap input { width:80px; padding:6px 8px; font-size:13px; }
+  .usd-badge { background:rgba(61,122,237,0.2); color:#6ba3ff; border:1px solid rgba(61,122,237,0.4); border-radius:4px; font-size:10px; font-weight:700; padding:1px 5px; }
+  .try-badge { background:rgba(240,180,41,0.15); color:var(--gold); border:1px solid rgba(240,180,41,0.3); border-radius:4px; font-size:10px; font-weight:700; padding:1px 5px; }
+  .eur-badge { background:rgba(74,222,128,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.4); border-radius:4px; font-size:10px; font-weight:700; padding:1px 5px; }
+
+  /* mat-row currency variant */
+  .mat-row-cur { display:grid; grid-template-columns:1fr 60px 88px 68px 30px; gap:5px; align-items:center; background:var(--surface2); border-radius:8px; padding:9px 10px; border:1px solid var(--border); margin-bottom:6px; }
+
+  @media(max-width:480px){
+    .mat-row { grid-template-columns:1fr 88px 28px; gap:5px; }
+    .mat-row-cur { grid-template-columns:1fr 55px 88px 28px; gap:4px; }
+    .result-grid { grid-template-columns:1fr 1fr; }
+    .form-row.three { grid-template-columns:1fr 1fr; }
+    .dtable th, .dtable td { font-size:11px; padding:5px 5px; }
+    header { padding:8px 10px; }
+  }
+  @media(max-width:360px){
+    .mat-row-cur { grid-template-columns:1fr 50px 82px 26px; gap:3px; }
+    .result-grid { grid-template-columns:1fr; }
+  }
+
+  /* iOS Safari fixes */
+  input[type="number"] { -webkit-appearance: none; }
+  /* Remove spinner arrows from all number inputs */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+  input, select, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .btn { -webkit-tap-highlight-color: transparent; }
+  /* Prevent iOS font size zoom on input focus */
+  @media(max-width:600px) {
+    input, select { font-size: 16px !important; }
+  }
+  /* Better touch targets */
+  .del-btn { min-width:32px; min-height:32px; }
+  .tab { padding: 14px 6px; }
+
+  /* ===== LOGIN SCREEN ===== */
+  #loginScreen {
+    position:fixed; inset:0; background:var(--bg); z-index:9999;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-box {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:32px 24px; width:100%; max-width:360px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .login-logo { text-align:center; margin-bottom:24px; }
+  .login-logo img { height:52px; }
+  .login-logo div { font-size:11px; color:var(--muted); letter-spacing:2px; margin-top:6px; text-transform:uppercase; }
+  .login-title { font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700; color:var(--gold); margin-bottom:18px; text-align:center; }
+  .login-user-btn {
+    width:100%; padding:12px; margin-bottom:8px; border-radius:10px;
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); font-family:'Barlow',sans-serif; font-size:14px;
+    cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;
+    transition:all 0.2s;
+  }
+  .login-user-btn:hover { border-color:var(--nx-teal); background:var(--bg); }
+  .login-user-btn .user-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .login-user-btn .user-info { flex:1; }
+  .login-user-btn .user-name { font-weight:600; font-size:14px; }
+  .login-user-btn .user-role { font-size:11px; color:var(--muted); }
+  .login-pass-modal { display:none; margin-top:16px; }
+  .login-pass-modal.open { display:block; }
+  .login-error { color:var(--red); font-size:12px; margin-top:6px; text-align:center; min-height:18px; }
+
+  /* ===== ADMIN PANEL ===== */
+  .admin-tab { background:linear-gradient(135deg,rgba(239,68,68,0.1),rgba(239,68,68,0.05)); border-color:rgba(239,68,68,0.3) !important; }
+  .admin-tab.active { color:#f87171 !important; border-bottom-color:#ef4444 !important; }
+  .admin-badge { background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:4px; font-size:9px; font-weight:700; padding:1px 5px; margin-left:4px; }
+  .user-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
+  .user-card-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .user-card-info { flex:1; }
+  .user-card-name { font-weight:600; font-size:14px; }
+  .user-card-role { font-size:11px; color:var(--muted); margin-top:2px; }
+  .user-card-actions { display:flex; gap:6px; }
+  .locked-overlay { position:relative; }
+  .locked-msg { background:rgba(11,26,31,0.92); border:1px solid rgba(239,68,68,0.3); border-radius:var(--radius); padding:40px 20px; text-align:center; color:var(--muted); }
+  .locked-msg .lock-icon { font-size:36px; margin-bottom:10px; }
+  .locked-msg div { font-size:13px; }
+
+  /* ===== CURRENT USER BAR ===== */
+  .user-bar { display:flex; align-items:center; gap:8px; background:rgba(0,99,125,0.12); border:1px solid rgba(0,99,125,0.3); border-radius:8px; padding:5px 10px; cursor:pointer; transition:all 0.2s; }
+  .user-bar:hover { background:rgba(0,99,125,0.2); }
+  .user-bar-name { font-size:11px; font-weight:600; color:var(--nx-teal); }
+  .user-bar-role { font-size:10px; color:var(--muted); }
+</style>
+</head>
+<body>
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="data:image/png;base64,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" alt="NexGen" style="height:46px">
+      <div>MALİYET HESAPLAMA SİSTEMİ</div>
+    </div>
+    <div class="login-title">🔐 Giriş Yapın</div>
+    <div id="loginUserList"></div>
+    <div class="login-pass-modal" id="loginPassArea">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <button onclick="cancelLogin()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px">←</button>
+        <div>
+          <div style="font-weight:600;font-size:14px" id="loginSelectedName">Kullanıcı</div>
+          <div style="font-size:11px;color:var(--muted)" id="loginSelectedRole"></div>
+        </div>
+      </div>
+      <label>ŞİFRE</label>
+      <input type="password" id="loginPassword" placeholder="Şifrenizi girin" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="login-error" id="loginError"></div>
+      <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="doLogin()">GİRİŞ YAP</button>
+    </div>
+  </div>
+</div>
+
+<div id="noStorageBanner" style="display:none;background:#7c3a00;color:#ffd;padding:8px 14px;font-size:12px;text-align:center;position:sticky;top:0;z-index:200">
+  ⚠️ Bu tarayıcıda veri kaydedilemez. Fiyatlar oturum boyunca geçerli olacak.
+</div>
+
+<header>
+  <div style="display:flex;align-items:center;gap:10px">
+    <img src="data:image/png;base64,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" alt="NexGen" style="height:46px;width:auto;object-fit:contain">
+    <div style="font-size:9px;color:#5a8fa0;letter-spacing:2px;text-transform:uppercase;margin-top:2px">MALİYET HESAPLAMA</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="user-bar" onclick="logoutUser()" title="Çıkış yap">
+        <span id="headerUserEmoji" style="font-size:16px">👤</span>
+        <div>
+          <div class="user-bar-name" id="headerUserName">–</div>
+          <div class="user-bar-role" id="headerUserRole">–</div>
+        </div>
+        <span style="font-size:10px;color:var(--muted)">⏻</span>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:10px;color:var(--muted)" id="headerStats"></div>
+    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+      <!-- USD -->
+      <span style="font-size:11px;color:#6ba3ff;font-weight:700">$</span>
+      <input type="number" id="usdRate" value="38.50" step="0.01" min="1" oninput="onRateChange()"
+        style="width:clamp(52px,14vw,68px);padding:4px 5px;font-size:12px;font-weight:700;color:#6ba3ff;border-color:rgba(61,122,237,0.4);background:rgba(61,122,237,0.08);text-align:right">
+      <span style="font-size:10px;color:var(--muted)">₺</span>
+      <span style="width:1px;height:14px;background:var(--border);display:inline-block;margin:0 2px"></span>
+      <!-- EUR -->
+      <span style="font-size:12px;color:#4ade80;font-weight:700">€</span>
+      <input type="number" id="eurRate" value="41.50" step="0.01" min="1" oninput="onRateChange()"
+        style="width:clamp(52px,14vw,68px);padding:4px 5px;font-size:12px;font-weight:700;color:#4ade80;border-color:rgba(74,222,128,0.4);background:rgba(74,222,128,0.08);text-align:right">
+      <span style="font-size:10px;color:var(--muted)">₺</span>
+      <!-- Refresh btn -->
+      <button onclick="fetchRatesFromTCMB()" title="TCMB'den kur güncelle"
+        style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center"
+        id="refreshBtn">🔄</button>
+    </div>
+    <div id="rateStatus" style="font-size:10px;color:var(--muted);text-align:right"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('hesapla')">🧮 HESAPLA</div>
+  <div class="tab" onclick="showTab('formuller')">📋 FORMÜLLER</div>
+  <div class="tab" onclick="showTab('hammaddeler')">📦 HAMMADDELER</div>
+  <div class="tab" onclick="showTab('tedarikciler')">🏭 TEDARİKÇİLER</div>
+  <div class="tab" id="musteriTab" onclick="showTab('musteriler')">👥 MÜŞTERİLER</div>
+  <div class="tab admin-tab" id="adminTab" onclick="showTab('admin')" style="display:none">⚙️ YÖNETİM</div>
+</div>
+
+<!-- HESAPLA -->
+<div id="tab-hesapla" class="page active">
+
+  <!-- KUR AYARLARI -->
+  <div class="cur-bar">
+    <span class="cur-label">💱 Fiyat Birimi</span>
+    <div class="cur-toggle">
+      <button class="cur-btn active" id="curTRY" onclick="setCurrency('TRY')">₺ TL</button>
+      <button class="cur-btn" id="curUSD" onclick="setCurrency('USD')">$ USD</button>
+      <button class="cur-btn" id="curEUR" onclick="setCurrency('EUR')">€ EUR</button>
+    </div>
+    <span style="font-size:10px;color:var(--muted);margin-left:auto">Kur sağ üstten ayarlanır</span>
+  </div>
+  <div class="card">
+    <div class="card-title">📝 Formül Bilgileri</div>
+    <div class="form-row">
+      <div><label>FORMÜL ADI / RENK KODU</label><input type="text" id="formulAdi" placeholder="ALTIN, BRONZ..."></div>
+      <div><label>TARİH</label><input type="date" id="formulTarih"></div>
+    </div>
+    <div class="form-row">
+      <div><label>MÜŞTERİ ADI</label><input type="text" id="musteriAdi" placeholder="Müşteri adı"></div>
+      <div><label>YOĞUNLUK</label><input type="number" id="yogunluk" step="0.01" value="1.60"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔬 Formül İçeriği</div>
+    <div id="ingredientList"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="openAddIngredient()">+ Hammadde Ekle</button>
+      <button class="btn btn-outline btn-sm" onclick="openLoadFormula()">📂 Formül Yükle</button>
+      <button class="btn btn-outline btn-sm" onclick="clearForm()">🗑 Temizle</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <button class="btn btn-gold" style="flex:1" onclick="calculate()">⚡ MALİYETİ HESAPLA</button>
+    <button class="btn btn-outline" onclick="saveFormula()" title="Kaydet">💾</button>
+  </div>
+
+  <div id="resultArea" style="display:none">
+    <div class="result-panel">
+      <div class="result-label">⚡ HESAPLAMA SONUCU</div>
+      <div class="result-grid">
+        <div class="result-item"><div class="ri-label">TOPLAM KG</div><div class="ri-value" id="resTotalKg">0</div><div class="ri-sub">kg</div></div>
+        <div class="result-item"><div class="ri-label">KG BAŞINA (₺)</div><div class="ri-value" id="resPerKg">0 ₺</div><div class="ri-sub" id="resPerKgSub"></div></div>
+        <div class="result-item"><div class="ri-label">TOPLAM (USD $)</div><div class="ri-value" id="resTotalUSD" style="color:#6ba3ff">0 $</div><div class="ri-sub" id="resTotalUSDSub"></div></div>
+        <div class="result-item"><div class="ri-label">TOPLAM (EUR €)</div><div class="ri-value" id="resTotalEUR" style="color:#4ade80">0 €</div><div class="ri-sub" id="resTotalEURSub"></div></div>
+      </div>
+      <div class="result-total">
+        <div class="rt-label">TOPLAM FORMÜL MALİYETİ (TL)</div>
+        <div class="rt-value" id="resTotalBig">0 ₺</div>
+        <div class="rt-sub" id="resTotalSub"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">📊 Hammadde Detayı</div>
+      <div style="overflow-x:auto"><table class="dtable">
+        <thead><tr><th>HAMMADDE</th><th style="text-align:right">MİKTAR</th><th style="text-align:right">BİRİM FİYAT</th><th style="text-align:right">TOPLAM</th><th style="text-align:right">%</th></tr></thead>
+        <tbody id="detailBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- FORMÜLLER -->
+<div id="tab-formuller" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div class="card-title" style="margin:0">Kayıtlı Formüller</div>
+    <button class="btn btn-gold btn-sm" onclick="showTab('hesapla')">+ Yeni</button>
+  </div>
+  <div id="formulaList"></div>
+</div>
+
+<!-- HAMMADDELER -->
+<div id="tab-hammaddeler" class="page">
+  <!-- ADMIN VIEW -->
+  <div id="hammaddeAdminView">
+  <div class="card">
+    <div class="card-title">📦 Yeni Hammadde Ekle</div>
+    <div class="form-row">
+      <div><label>HAMMADDE ADI</label><input type="text" id="matName" placeholder="EVA-28, ZNO..."></div>
+      <div><label>KATEGORİ</label>
+        <select id="matCat">
+          <option value="polimer">Polimer/Ana</option>
+          <option value="katki">Katkı Maddesi</option>
+          <option value="boya">Boya/Renk</option>
+          <option value="kimyasal">Kimyasal</option>
+          <option value="dolgu">Dolgu</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row three">
+      <div><label>BİRİM FİYAT</label><input type="number" id="matPrice" placeholder="0.00" step="0.01"></div>
+      <div><label>PARA BİRİMİ</label>
+        <select id="matCurrency">
+          <option value="TRY">₺ Türk Lirası</option>
+          <option value="USD">$ Dolar (USD)</option>
+          <option value="EUR">€ Euro (EUR)</option>
+        </select>
+      </div>
+      <div><label>BİRİM</label>
+        <select id="matUnit"><option value="kg">KG</option><option value="gr">GR</option><option value="lt">LT</option></select>
+      </div>
+    </div>
+    <div class="form-full"><label>TEDARİKÇİ</label><select id="matSupplier"><option value="">Seçiniz...</option></select></div>
+    <button class="btn btn-gold" onclick="addMaterial()">+ KAYDET</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Hammadde Listesi <span id="matCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+    <div style="margin-bottom:10px"><input type="text" id="matSearch" placeholder="🔍 Ara..." oninput="renderMaterialList()"></div>
+    <div id="materialList"></div>
+  </div>
+  </div>
+  <!-- LOCKED VIEW -->
+  <div id="hammaddeLockedView" style="display:none">
+    <div class="locked-msg">
+      <div class="lock-icon">🔒</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold);margin-bottom:8px">YETKİSİZ ERİŞİM</div>
+      <div>Hammadde fiyatları ve listesi sadece <strong>Admin</strong> tarafından görüntülenebilir ve düzenlenebilir.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TEDARİKÇİLER -->
+<div id="tab-tedarikciler" class="page">
+  <div class="card">
+    <div class="card-title">🏭 Yeni Tedarikçi Ekle</div>
+    <div class="form-row">
+      <div><label>FİRMA ADI</label><input type="text" id="supName" placeholder="Firma adı"></div>
+      <div><label>İLETİŞİM</label><input type="text" id="supContact" placeholder="Telefon / Mail"></div>
+    </div>
+    <div class="form-full"><label>ADRES / NOT</label><input type="text" id="supAddress" placeholder="Adres veya ek not"></div>
+    <button class="btn btn-gold" onclick="addSupplier()">+ KAYDET</button>
+  </div>
+  <div class="card">
+    <div class="card-title">🏢 Tedarikçi Listesi <span id="supCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+    <div style="margin-bottom:10px"><input type="text" id="supSearch" placeholder="🔍 Ara..." oninput="renderSupplierList()"></div>
+    <div id="supplierList"></div>
+  </div>
+</div>
+
+<!-- TEDARİKÇİ DETAY PANELİ -->
+<div id="supDetailPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:300;overflow-y:auto;">
+  <div style="background:linear-gradient(135deg,#0e2530,#0b1a1f);border-bottom:2px solid var(--nx-blue);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
+    <button onclick="closeSupDetail()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 8px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">←</button>
+    <div style="flex:1">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold)" id="supPanelTitle">Tedarikçi</div>
+      <div style="font-size:10px;color:var(--muted)" id="supPanelSub"></div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="openEditSupplier()">✏️ Düzenle</button>
+  </div>
+  <div style="padding:14px">
+
+    <!-- Bilgi kartı -->
+    <div class="card" id="supPanelInfo"></div>
+
+    <!-- Düzenleme formu -->
+    <div class="card" id="supEditForm" style="display:none;border-color:var(--nx-teal)">
+      <div class="card-title">✏️ Tedarikçiyi Düzenle</div>
+      <div class="form-row">
+        <div><label>FİRMA ADI</label><input type="text" id="editSupName" placeholder="Firma adı"></div>
+        <div><label>İLETİŞİM</label><input type="text" id="editSupContact" placeholder="Telefon / Mail"></div>
+      </div>
+      <div class="form-full"><label>ADRES / NOT</label><input type="text" id="editSupAddress" placeholder="Adres veya not"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveEditSupplier()">💾 KAYDET</button>
+        <button class="btn btn-outline" onclick="cancelEditSupplier()">İPTAL</button>
+      </div>
+    </div>
+
+    <!-- Temin ettiği hammaddeler -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin:0">📦 Temin Ettiği Hammaddeler</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddSupMaterial()">+ Hammadde Ekle</button>
+      </div>
+      <div id="supPanelMaterials"></div>
+    </div>
+
+    <!-- Hammadde ekleme formu -->
+    <div class="card" id="supMaterialForm" style="display:none;border-color:var(--nx-teal)">
+      <div class="card-title">➕ Hammadde Ekle / Düzenle</div>
+      <div class="form-row">
+        <div>
+          <label>HAMMADDE SEÇ VEYA YENİ GİR</label>
+          <input type="text" id="supMatName" placeholder="Hammadde adı" list="supMatDatalist">
+          <datalist id="supMatDatalist"></datalist>
+        </div>
+        <div><label>KATEGORİ</label>
+          <select id="supMatCat">
+            <option value="polimer">Polimer/Ana</option>
+            <option value="katki">Katkı Maddesi</option>
+            <option value="boya">Boya/Renk</option>
+            <option value="kimyasal">Kimyasal</option>
+            <option value="dolgu">Dolgu</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row three">
+        <div><label>BİRİM FİYAT</label><input type="number" id="supMatPrice" placeholder="0.00" step="0.0001"></div>
+        <div><label>PARA BİRİMİ</label>
+          <select id="supMatCurrency">
+            <option value="TRY">₺ Türk Lirası</option>
+            <option value="USD">$ Dolar</option>
+            <option value="EUR">€ Euro</option>
+          </select>
+        </div>
+        <div><label>BİRİM</label>
+          <select id="supMatUnit"><option value="kg">KG</option><option value="gr">GR</option><option value="lt">LT</option></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveSupMaterial()">💾 KAYDET</button>
+        <button class="btn btn-outline" onclick="cancelSupMaterial()">İPTAL</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD INGREDIENT MODAL -->
+<div class="modal-overlay" id="addIngModal">
+  <div class="modal">
+    <div class="modal-title">Hammadde Ekle</div>
+    <div class="form-full"><label>HAMMADDE SEÇ</label><select id="ingSelect"><option value="">Seçiniz...</option></select></div>
+    <div class="form-row">
+      <div><label>MİKTAR</label><input type="number" id="ingAmount" placeholder="0" step="0.001"></div>
+      <div><label>BİRİM</label><select id="ingUnit"><option value="kg">KG</option><option value="gr">GR</option></select></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-gold" style="flex:1" onclick="confirmAddIngredient()">EKLE</button>
+      <button class="btn btn-outline" onclick="closeModal('addIngModal')">İPTAL</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOAD FORMULA MODAL -->
+<div class="modal-overlay" id="loadFormModal">
+  <div class="modal">
+    <div class="modal-title">Formül Yükle</div>
+    <div id="loadFormList"></div>
+    <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('loadFormModal')">KAPAT</button>
+  </div>
+</div>
+
+<!-- MÜŞTERİLER -->
+<div id="tab-musteriler" class="page">
+  <div class="card">
+    <div class="card-title">👥 Yeni Müşteri Ekle</div>
+    <div class="form-row">
+      <div><label>MÜŞTERİ ADI / FİRMA</label><input type="text" id="cusName" placeholder="Firma / Kişi adı"></div>
+      <div><label>YETKİLİ KİŞİ</label><input type="text" id="cusContact" placeholder="Ad Soyad"></div>
+    </div>
+    <div class="form-row">
+      <div><label>TELEFON</label><input type="text" id="cusPhone" placeholder="+90 5xx xxx xx xx"></div>
+      <div><label>E-POSTA</label><input type="text" id="cusEmail" placeholder="ornek@email.com"></div>
+    </div>
+    <div class="form-full"><label>ADRES / NOT</label><textarea id="cusNote" rows="2" placeholder="Adres veya ek bilgi" style="resize:vertical"></textarea></div>
+    <button class="btn btn-gold" onclick="addCustomer()">+ MÜŞTERİ KAYDET</button>
+  </div>
+  <div class="card">
+    <div class="card-title">🏢 Müşteri Listesi <span id="cusCount" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+    <div style="margin-bottom:10px"><input type="text" id="cusSearch" placeholder="🔍 Ara..." oninput="renderCustomerList()"></div>
+    <div id="customerList"></div>
+  </div>
+</div>
+
+<!-- MÜŞTERİ DETAY PANEL (full page slide) -->
+<div id="cusDetailPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:300;overflow-y:auto;">
+  <div style="background:linear-gradient(135deg,#0e2530,#0b1a1f);border-bottom:2px solid var(--nx-blue);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
+    <button onclick="closeCusDetail()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 8px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">←</button>
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--gold)" id="cusPanelTitle">Müşteri</div>
+      <div style="font-size:10px;color:var(--muted)" id="cusPanelSub"></div>
+    </div>
+  </div>
+  <div style="padding:14px">
+    <!-- Müşteri bilgi kartı -->
+    <div class="card" id="cusPanelInfo"></div>
+
+    <!-- Formüller -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin:0">📋 Formüller</div>
+        <button class="btn btn-gold btn-sm" onclick="openNewFormulaForCustomer()">+ Yeni Formül</button>
+      </div>
+      <div id="cusPanelFormulas"></div>
+    </div>
+
+    <!-- Yeni Formül Ekleme -->
+    <div class="card" id="cusFormulaForm" style="display:none;border-color:var(--nx-teal)">
+      <div class="card-title">➕ Yeni Formül Ekle</div>
+      <div class="form-row">
+        <div><label>FORMÜL ADI / RENK KODU</label><input type="text" id="cusFormName" placeholder="ALTIN, BRONZ..."></div>
+        <div><label>TARİH</label><input type="date" id="cusFormDate"></div>
+      </div>
+      <div class="form-row">
+        <div><label>YOĞUNLUK</label><input type="number" id="cusFormDensity" step="0.01" value="1.60"></div>
+        <div><label>LOT (L kg)</label><input type="number" id="cusFormTotalL" step="0.001" placeholder="83.750"></div>
+      </div>
+
+      <div class="section-label" style="margin-top:8px">HAMMADDELER</div>
+      <div id="cusFormIngList"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-outline btn-sm" onclick="openCusIngModal()">+ Hammadde Ekle</button>
+        <button class="btn btn-outline btn-sm" onclick="loadBaseFormula()">📂 Mevcut Formülden Yükle</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveCusFormula()">💾 FORMÜLÜ KAYDET</button>
+        <button class="btn btn-outline" onclick="cancelCusFormula()">İPTAL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CUS INGREDIENT MODAL -->
+<div class="modal-overlay" id="cusIngModal">
+  <div class="modal">
+    <div class="modal-title">Hammadde Ekle</div>
+    <div class="form-full"><label>HAMMADDE SEÇ</label><select id="cusIngSelect"><option value="">Seçiniz...</option></select></div>
+    <div class="form-row">
+      <div><label>MİKTAR</label><input type="number" id="cusIngAmount" placeholder="0" step="0.001"></div>
+      <div><label>BİRİM</label><select id="cusIngUnit"><option value="kg">KG</option><option value="gr">GR</option></select></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-gold" style="flex:1" onclick="confirmCusIng()">EKLE</button>
+      <button class="btn btn-outline" onclick="closeModal('cusIngModal')">İPTAL</button>
+    </div>
+  </div>
+</div>
+
+<!-- BASE FORMULA LOAD MODAL -->
+<div class="modal-overlay" id="baseFormModal">
+  <div class="modal">
+    <div class="modal-title">Formül Yükle</div>
+    <div id="baseFormList"></div>
+    <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('baseFormModal')">KAPAT</button>
+  </div>
+</div>
+
+<!-- ADMIN PANELİ -->
+<div id="tab-admin" class="page">
+  <div class="card">
+    <div class="card-title">👥 Kullanıcı Yönetimi <span class="admin-badge">ADMIN</span></div>
+    <div class="section-label">YENİ KULLANICI OLUŞTUR</div>
+    <div class="form-row">
+      <div><label>KULLANICI ADI</label><input type="text" id="newUserName" placeholder="Ad Soyad"></div>
+      <div><label>ROL</label>
+        <select id="newUserRole">
+          <option value="user">👤 Normal Kullanıcı</option>
+          <option value="admin">🔴 Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div><label>ŞİFRE</label><input type="password" id="newUserPass" placeholder="Şifre"></div>
+      <div><label>EMOJİ / AVATAR</label>
+        <select id="newUserEmoji">
+          <option value="👤">👤 Varsayılan</option>
+          <option value="👨‍💼">👨‍💼 Erkek</option>
+          <option value="👩‍💼">👩‍💼 Kadın</option>
+          <option value="🧑‍🔬">🧑‍🔬 Teknik</option>
+          <option value="🧑‍💻">🧑‍💻 Bilgisayar</option>
+          <option value="🏭">🏭 Üretim</option>
+          <option value="📊">📊 Analiz</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="createUser()">+ KULLANICI OLUŞTUR</button>
+  </div>
+  <div class="card">
+    <div class="card-title">🗂 Mevcut Kullanıcılar</div>
+    <div id="userList"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔑 Admin Şifresi Değiştir</div>
+    <div class="form-row">
+      <div><label>YENİ ŞİFRE</label><input type="password" id="newAdminPass" placeholder="Yeni şifre"></div>
+      <div><label>TEKRAR GİRİN</label><input type="password" id="newAdminPass2" placeholder="Şifre tekrar"></div>
+    </div>
+    <button class="btn btn-outline" onclick="changeAdminPass()">🔐 ŞİFRE GÜNCELLE</button>
+  </div>
+  <div class="card" style="border-color:rgba(239,68,68,0.3)">
+    <div class="card-title" style="color:#f87171">⚠️ Tehlikeli Bölge</div>
+    <button class="btn btn-danger" onclick="resetAllData()">🗑 Tüm Verileri Sıfırla</button>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">Bu işlem geri alınamaz. Tüm formüller, hammaddeler ve tedarikçiler silinir.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ======== AUTH SYSTEM ========
+const DEFAULT_USERS = [
+  { id: 1, name: 'Admin', role: 'admin', emoji: '🔴', password: 'admin123' },
+];
+
+function getUsers() {
+  try {
+    const u = localStorage.getItem('nexgen_users');
+    if (u) return JSON.parse(u);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_USERS));
+}
+
+function saveUsers(users) {
+  try { localStorage.setItem('nexgen_users', JSON.stringify(users)); } catch(e) {}
+}
+
+let currentUser = null;
+
+function renderLoginUsers() {
+  const users = getUsers();
+  const el = document.getElementById('loginUserList');
+  el.innerHTML = users.map(u => `
+    <button class="login-user-btn" onclick="selectUser(${u.id})">
+      <div class="user-avatar" style="background:${u.role==='admin'?'rgba(239,68,68,0.15)':'rgba(0,99,125,0.15)'}">${u.emoji}</div>
+      <div class="user-info">
+        <div class="user-name">${u.name}</div>
+        <div class="user-role">${u.role==='admin'?'🔴 Admin':'👤 Kullanıcı'}</div>
+      </div>
+      <span style="color:var(--muted)">›</span>
+    </button>`).join('');
+}
+
+let pendingUserId = null;
+
+function selectUser(id) {
+  const users = getUsers();
+  const user = users.find(u => u.id === id);
+  if (!user) return;
+  pendingUserId = id;
+  document.getElementById('loginSelectedName').textContent = user.name;
+  document.getElementById('loginSelectedRole').textContent = user.role === 'admin' ? '🔴 Admin' : '👤 Kullanıcı';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginPassArea').classList.add('open');
+  setTimeout(() => document.getElementById('loginPassword').focus(), 100);
+}
+
+function cancelLogin() {
+  pendingUserId = null;
+  document.getElementById('loginPassArea').classList.remove('open');
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+function doLogin() {
+  const users = getUsers();
+  const user = users.find(u => u.id === pendingUserId);
+  const pass = document.getElementById('loginPassword').value;
+  if (!user) return;
+  if (pass !== user.password) {
+    document.getElementById('loginError').textContent = '❌ Şifre yanlış!';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginPassword').focus();
+    return;
+  }
+  currentUser = user;
+  document.getElementById('loginScreen').style.display = 'none';
+  applyUserPermissions();
+  document.getElementById('headerUserName').textContent = user.name;
+  document.getElementById('headerUserRole').textContent = user.role === 'admin' ? '🔴 Admin' : '👤 Kullanıcı';
+  document.getElementById('headerUserEmoji').textContent = user.emoji;
+  showToast('✅ Hoşgeldiniz, ' + user.name + '!');
+}
+
+function logoutUser() {
+  if (!confirm('Çıkış yapmak istiyor musunuz?')) return;
+  currentUser = null;
+  cancelLogin();
+  document.getElementById('loginPassArea').classList.remove('open');
+  document.getElementById('loginScreen').style.display = 'flex';
+  renderLoginUsers();
+}
+
+function applyUserPermissions() {
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  // Admin tab visibility
+  document.getElementById('adminTab').style.display = isAdmin ? '' : 'none';
+  // Hammadde access
+  document.getElementById('hammaddeAdminView').style.display = isAdmin ? '' : 'none';
+  document.getElementById('hammaddeLockedView').style.display = isAdmin ? 'none' : '';
+}
+
+// ===== USER MANAGEMENT =====
+function renderUserList() {
+  const users = getUsers();
+  const el = document.getElementById('userList');
+  if (!el) return;
+  el.innerHTML = users.map(u => `
+    <div class="user-card">
+      <div class="user-card-avatar" style="background:${u.role==='admin'?'rgba(239,68,68,0.15)':'rgba(0,99,125,0.15)'}">${u.emoji}</div>
+      <div class="user-card-info">
+        <div class="user-card-name">${u.name} ${u.id===1?'<span class="admin-badge">SİLİNEMEZ</span>':''}</div>
+        <div class="user-card-role">${u.role==='admin'?'🔴 Admin':'👤 Normal Kullanıcı'}</div>
+      </div>
+      <div class="user-card-actions">
+        ${u.id !== 1 ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Sil</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function createUser() {
+  const name = document.getElementById('newUserName').value.trim();
+  const pass = document.getElementById('newUserPass').value;
+  const role = document.getElementById('newUserRole').value;
+  const emoji = document.getElementById('newUserEmoji').value;
+  if (!name) { showToast('Kullanıcı adı girin!', true); return; }
+  if (!pass || pass.length < 4) { showToast('Şifre en az 4 karakter olmalı!', true); return; }
+  const users = getUsers();
+  if (users.find(u => u.name.toLowerCase() === name.toLowerCase())) {
+    showToast('Bu isimde kullanıcı zaten var!', true); return;
+  }
+  users.push({ id: Date.now(), name, role, emoji, password: pass });
+  saveUsers(users);
+  document.getElementById('newUserName').value = '';
+  document.getElementById('newUserPass').value = '';
+  renderUserList();
+  showToast('✅ Kullanıcı oluşturuldu: ' + name);
+}
+
+function deleteUser(id) {
+  if (!confirm('Bu kullanıcıyı silmek istiyor musunuz?')) return;
+  const users = getUsers().filter(u => u.id !== id);
+  saveUsers(users);
+  renderUserList();
+  showToast('Kullanıcı silindi');
+}
+
+function changeAdminPass() {
+  const p1 = document.getElementById('newAdminPass').value;
+  const p2 = document.getElementById('newAdminPass2').value;
+  if (!p1 || p1.length < 4) { showToast('Şifre en az 4 karakter!', true); return; }
+  if (p1 !== p2) { showToast('Şifreler eşleşmiyor!', true); return; }
+  const users = getUsers();
+  const admin = users.find(u => u.id === 1);
+  if (admin) admin.password = p1;
+  saveUsers(users);
+  document.getElementById('newAdminPass').value = '';
+  document.getElementById('newAdminPass2').value = '';
+  showToast('✅ Admin şifresi güncellendi!');
+}
+
+function resetAllData() {
+  if (!confirm('TÜM VERİLER SİLİNECEK! Emin misiniz?')) return;
+  if (!confirm('Bu işlem GERİ ALINAMAZ. Devam etmek istiyor musunuz?')) return;
+  localStorage.removeItem('nexgen_v2');
+  location.reload();
+}
+
+// ======== DEFAULT DATA ========
+const DEFAULT_DATA = {
+  settings: { currency: 'TRY', usdRate: 38.50 },
+  customers: [],
+  suppliers: [
+    {id:1,name:'DERKİM',contact:'',materials:'EVA-18, EVA-28'},
+    {id:2,name:'AYDIN MADENCİLİK',contact:'',materials:'KALSİT'},
+    {id:3,name:'MELOS',contact:'',materials:'ZNO'},
+    {id:4,name:'URSA',contact:'',materials:'DCP, PE WAX, TAIC 70'},
+    {id:5,name:'DOĞAN TİCARET',contact:'',materials:'STA, ZN/ST'},
+    {id:6,name:'SANCAR',contact:'',materials:'TPE 8201'},
+    {id:7,name:'PDL',contact:'',materials:'POE LG565'},
+    {id:8,name:'ÇİN',contact:'',materials:'SEBS, Boyalar'}
+  ],
+  materials: [
+    {id:1, name:'EVA-28',       category:'polimer',   price:0, unit:'kg', supplier:'DERKİM'},
+    {id:2, name:'EVA-18',       category:'polimer',   price:0, unit:'kg', supplier:'DERKİM'},
+    {id:3, name:'POE LG565',    category:'polimer',   price:0, unit:'kg', supplier:'PDL'},
+    {id:4, name:'TPE 8201',     category:'polimer',   price:0, unit:'kg', supplier:'SANCAR'},
+    {id:5, name:'KALSİT',       category:'dolgu',     price:0, unit:'kg', supplier:'AYDIN MADENCİLİK'},
+    {id:6, name:'NAYPAR 315',   category:'katki',     price:0, unit:'kg', supplier:''},
+    {id:7, name:'ZNO',          category:'kimyasal',  price:0, unit:'gr', supplier:'MELOS'},
+    {id:8, name:'ZN/ST',        category:'kimyasal',  price:0, unit:'gr', supplier:'DOĞAN TİCARET'},
+    {id:9, name:'STA',          category:'kimyasal',  price:0, unit:'gr', supplier:'DOĞAN TİCARET'},
+    {id:10,name:'TAIC 70',      category:'kimyasal',  price:0, unit:'gr', supplier:'URSA'},
+    {id:11,name:'PE WAX',       category:'katki',     price:0, unit:'gr', supplier:'URSA'},
+    {id:12,name:'DCP %99',      category:'kimyasal',  price:0, unit:'gr', supplier:'URSA'},
+    {id:13,name:'AC PROFOR',    category:'katki',     price:0, unit:'gr', supplier:''},
+    {id:14,name:'İRPODİN 305 SOLAR GOLD', category:'boya', price:0, unit:'gr', supplier:''},
+    {id:15,name:'P-500 BAKIR SEDEF',      category:'boya', price:0, unit:'gr', supplier:''},
+    {id:16,name:'SLVER 100 SEDEF',        category:'boya', price:0, unit:'gr', supplier:''},
+    {id:17,name:'PIGMENT BLUE 15/1',      category:'boya', price:0, unit:'gr', supplier:''},
+    {id:18,name:'BLACK N550',             category:'boya', price:0, unit:'gr', supplier:''},
+    {id:19,name:'PPGMEN RED 48/2',        category:'boya', price:0, unit:'gr', supplier:''},
+    {id:20,name:'SILVIR 100 BEYAZ SEDEF', category:'boya', price:0, unit:'gr', supplier:''},
+    {id:21,name:'GREEN 7',                category:'boya', price:0, unit:'gr', supplier:''},
+    {id:22,name:'DEMPR OKSPT SARI 313',   category:'boya', price:0, unit:'gr', supplier:''},
+    {id:23,name:'PIGMEN YELLOW 13',       category:'boya', price:0, unit:'gr', supplier:''},
+    {id:24,name:'DEMPR OKSPT KAHVE 610',  category:'boya', price:0, unit:'gr', supplier:''},
+    {id:25,name:'DEMPR OKSPT KIRMIZI 130',category:'boya', price:0, unit:'gr', supplier:''},
+    {id:26,name:'TALC',                   category:'dolgu',price:0, unit:'kg', supplier:''},
+    {id:27,name:'EVA 2806',               category:'polimer',price:0,unit:'kg',supplier:''},
+    {id:28,name:'8201 MODEL',             category:'polimer',price:0,unit:'kg',supplier:''},
+    {id:29,name:'8202',                   category:'polimer',price:0,unit:'kg',supplier:''},
+    {id:30,name:'DCP (DİP)',              category:'kimyasal',price:0,unit:'gr',supplier:''},
+    {id:31,name:'MASTER BATCH 8502',      category:'boya', price:0, unit:'gr', supplier:''},
+    {id:32,name:'SARI MODEL',             category:'polimer',price:0,unit:'kg',supplier:''},
+    {id:33,name:'7025',                   category:'polimer',price:0,unit:'kg',supplier:''},
+    {id:34,name:'808 TOZ',                category:'katki', price:0,unit:'gr', supplier:''},
+    {id:35,name:'4006 KAÇUK YAĞ',         category:'katki', price:0,unit:'gr', supplier:''},
+    {id:36,name:'BEYAZ TAŞ ÇİNKO OKSAT',  category:'kimyasal',price:0,unit:'gr',supplier:''},
+    {id:37,name:'ÇİNKO STEROİD',          category:'kimyasal',price:0,unit:'gr',supplier:''},
+    {id:38,name:'1801 STEROİD ASİT',      category:'kimyasal',price:0,unit:'gr',supplier:''},
+    {id:39,name:'TADIL BAĞLANTI (NİNGBO)',category:'katki', price:0,unit:'gr', supplier:''},
+    {id:40,name:'AC3000H KÖPÜRTÜCÜ',      category:'katki', price:0,unit:'gr', supplier:''},
+    {id:41,name:'886 TİTANYUM DİOKSİT',  category:'katki', price:0,unit:'gr', supplier:''},
+    {id:42,name:'3148 1/2',               category:'boya', price:0,unit:'gr', supplier:''},
+    {id:43,name:'3138 1/2',               category:'boya', price:0,unit:'gr', supplier:''},
+    {id:44,name:'1722 1/2',               category:'boya', price:0,unit:'gr', supplier:''}
+  ],
+  formulas: [
+    // ALTIN
+    {id:1, name:'ALTIN', customer:'', date:'2025-11-11', density:1.60,
+     totalL:83.750, totalS:83.050,
+     ingredients:[
+      {materialId:1,  name:'EVA-28',               amount:25,   unit:'kg'},
+      {materialId:2,  name:'EVA-18',               amount:28,   unit:'kg'},
+      {materialId:3,  name:'POE LG565',            amount:4,    unit:'kg'},
+      {materialId:4,  name:'TPE 8201',             amount:5,    unit:'kg'},
+      {materialId:5,  name:'KALSİT',               amount:12,   unit:'kg'},
+      {materialId:7,  name:'ZNO',                  amount:850,  unit:'gr'},
+      {materialId:8,  name:'ZN/ST',                amount:650,  unit:'gr'},
+      {materialId:9,  name:'STA',                  amount:400,  unit:'gr'},
+      {materialId:10, name:'TAIC 70',              amount:150,  unit:'gr'},
+      {materialId:11, name:'PE WAX',               amount:800,  unit:'gr'},
+      {materialId:12, name:'DCP %99',              amount:700,  unit:'gr'},
+      {materialId:13, name:'AC PROFOR (L)',         amount:1900, unit:'gr'},
+      {materialId:14, name:'İRPODİN 305 SOLAR GOLD',amount:3600,unit:'gr'},
+      {materialId:15, name:'P-500 BAKIR SEDEF',    amount:700,  unit:'gr'}
+    ]},
+    // BRONZ
+    {id:2, name:'BRONZ', customer:'', date:'2025-11-11', density:1.60,
+     totalL:85.842, totalS:85.142,
+     ingredients:[
+      {materialId:1,  name:'EVA-28',               amount:25,   unit:'kg'},
+      {materialId:2,  name:'EVA-18',               amount:28,   unit:'kg'},
+      {materialId:3,  name:'POE LG565',            amount:4,    unit:'kg'},
+      {materialId:4,  name:'TPE 8201',             amount:5,    unit:'kg'},
+      {materialId:5,  name:'KALSİT',               amount:12,   unit:'kg'},
+      {materialId:7,  name:'ZNO',                  amount:850,  unit:'gr'},
+      {materialId:8,  name:'ZN/ST',                amount:650,  unit:'gr'},
+      {materialId:9,  name:'STA',                  amount:400,  unit:'gr'},
+      {materialId:10, name:'TAIC 70',              amount:150,  unit:'gr'},
+      {materialId:11, name:'PE WAX',               amount:800,  unit:'gr'},
+      {materialId:12, name:'DCP %99',              amount:700,  unit:'gr'},
+      {materialId:13, name:'AC PROFOR (L)',         amount:1900, unit:'gr'},
+      {materialId:15, name:'P-500 BAKIR SEDEF',    amount:6000, unit:'gr'},
+      {materialId:19, name:'PPGMEN RED 48/2',      amount:12,   unit:'gr'},
+      {materialId:18, name:'BLACK N550',           amount:380,  unit:'gr'}
+    ]},
+    // GÜMÜŞ
+    {id:3, name:'GÜMÜŞ', customer:'', date:'2025-11-11', density:1.60,
+     totalL:87.500, totalS:86.800,
+     ingredients:[
+      {materialId:1,  name:'EVA-28',               amount:25,   unit:'kg'},
+      {materialId:2,  name:'EVA-18',               amount:28,   unit:'kg'},
+      {materialId:3,  name:'POE LG565',            amount:4,    unit:'kg'},
+      {materialId:4,  name:'TPE 8201',             amount:5,    unit:'kg'},
+      {materialId:5,  name:'KALSİT',               amount:12,   unit:'kg'},
+      {materialId:7,  name:'ZNO',                  amount:850,  unit:'gr'},
+      {materialId:8,  name:'ZN/ST',                amount:650,  unit:'gr'},
+      {materialId:9,  name:'STA',                  amount:400,  unit:'gr'},
+      {materialId:10, name:'TAIC 70',              amount:150,  unit:'gr'},
+      {materialId:11, name:'PE WAX',               amount:800,  unit:'gr'},
+      {materialId:12, name:'DCP %99',              amount:700,  unit:'gr'},
+      {materialId:13, name:'AC PROFOR (L)',         amount:1900, unit:'gr'},
+      {materialId:16, name:'SLVER 100 SEDEF',      amount:8000, unit:'gr'},
+      {materialId:17, name:'PIGMENT BLUE 15/1',    amount:3,    unit:'gr'},
+      {materialId:18, name:'BLACK N550',           amount:41,   unit:'gr'}
+    ]},
+    // SEDEF HAKİ
+    {id:4, name:'SEDEF HAKİ', customer:'', date:'2025-11-11', density:1.60,
+     totalL:84.890, totalS:null,
+     ingredients:[
+      {materialId:1,  name:'EVA-28',               amount:25,   unit:'kg'},
+      {materialId:2,  name:'EVA-18',               amount:28,   unit:'kg'},
+      {materialId:3,  name:'POE LG565',            amount:4,    unit:'kg'},
+      {materialId:4,  name:'TPE 8201',             amount:5,    unit:'kg'},
+      {materialId:5,  name:'KALSİT',               amount:12,   unit:'kg'},
+      {materialId:7,  name:'ZNO',                  amount:850,  unit:'gr'},
+      {materialId:8,  name:'ZN/ST',                amount:650,  unit:'gr'},
+      {materialId:9,  name:'STA',                  amount:400,  unit:'gr'},
+      {materialId:10, name:'TAIC 70',              amount:150,  unit:'gr'},
+      {materialId:11, name:'PE WAX',               amount:800,  unit:'gr'},
+      {materialId:12, name:'DCP %99',              amount:700,  unit:'gr'},
+      {materialId:13, name:'AC PROFOR (L)',         amount:1900, unit:'gr'},
+      {materialId:15, name:'P-500 BAKIR SEDEF',    amount:1580, unit:'gr'},
+      {materialId:20, name:'SILVIR 100 BEYAZ SEDEF',amount:2800,unit:'gr'},
+      {materialId:21, name:'GREEN 7',              amount:450,  unit:'gr'},
+      {materialId:18, name:'BLACK N550',           amount:155,  unit:'gr'},
+      {materialId:22, name:'DEMPR OKSPT SARI 313', amount:250,  unit:'gr'},
+      {materialId:23, name:'PIGMEN YELLOW 13',     amount:15,   unit:'gr'},
+      {materialId:24, name:'DEMPR OKSPT KAHVE 610',amount:140,  unit:'gr'},
+      {materialId:25, name:'DEMPR OKSPT KIRMIZI 130',amount:50, unit:'gr'}
+    ]},
+    // ZT-109 SARI
+    {id:5, name:'ZT-109 SARI', customer:'Orta Geçkme', date:'2024-04-22', density:1.83,
+     totalL:30, totalS:null,
+     ingredients:[
+      {materialId:1,  name:'EVA-28',               amount:50,   unit:'kg'},
+      {materialId:32, name:'SARI MODEL',           amount:23,   unit:'kg'},
+      {materialId:33, name:'7025',                 amount:5,    unit:'kg'},
+      {materialId:34, name:'808 TOZ',              amount:1000, unit:'gr'},
+      {materialId:35, name:'4006 KAÇUK YAĞ',       amount:600,  unit:'gr'},
+      {materialId:36, name:'BEYAZ TAŞ ÇİNKO OKSAT',amount:250, unit:'gr'},
+      {materialId:37, name:'ÇİNKO STEROİD',        amount:500,  unit:'gr'},
+      {materialId:38, name:'1801 STEROİD ASİT',    amount:690,  unit:'gr'},
+      {materialId:39, name:'TADIL BAĞLANTI (NİNGBO)',amount:2100,unit:'gr'},
+      {materialId:40, name:'AC3000H KÖPÜRTÜCÜ',    amount:1200, unit:'gr'},
+      {materialId:41, name:'886 TİTANYUM DİOKSİT', amount:720, unit:'gr'},
+      {materialId:42, name:'3148 1/2',             amount:780,  unit:'gr'},
+      {materialId:43, name:'3138 1/2',             amount:24,   unit:'gr'},
+      {materialId:44, name:'1722 1/2',             amount:8,    unit:'gr'}
+    ]},
+    // İSİMSİZ / 2806
+    {id:6, name:'2806 FORMÜL', customer:'', date:'', density:1.60,
+     totalL:null, totalS:null,
+     ingredients:[
+      {materialId:27, name:'EVA 2806',             amount:62,   unit:'kg'},
+      {materialId:3,  name:'POE LG565',            amount:12,   unit:'kg'},
+      {materialId:28, name:'8201 MODEL',           amount:3,    unit:'kg'},
+      {materialId:29, name:'8202',                 amount:5,    unit:'kg'},
+      {materialId:26, name:'TALC',                 amount:10,   unit:'kg'},
+      {materialId:11, name:'PE WAX',               amount:3,    unit:'kg'},
+      {materialId:9,  name:'STA',                  amount:500,  unit:'gr'},
+      {materialId:8,  name:'ZN/ST',                amount:600,  unit:'gr'},
+      {materialId:7,  name:'ZNO',                  amount:1500, unit:'gr'},
+      {materialId:31, name:'MASTER BATCH 8502',    amount:8000, unit:'gr'},
+      {materialId:30, name:'DCP (DİP)',            amount:1550, unit:'gr'},
+      {materialId:13, name:'AC PROFOR (L)',         amount:4500, unit:'gr'}
+    ]}
+  ]
+};
+
+// ======== STATE ========
+let _lsOk = false;
+try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); _lsOk = true; } catch(e) {}
+
+function lsGet(k) { try { return _lsOk ? localStorage.getItem(k) : null; } catch(e) { return null; } }
+function lsSet(k,v) { try { if(_lsOk) localStorage.setItem(k,v); } catch(e) {} }
+
+let data = JSON.parse(lsGet('nexgen_v2') || 'null') || JSON.parse(JSON.stringify(DEFAULT_DATA));
+if(!data.settings) data.settings = {currency:'TRY', usdRate:38.50, eurRate:41.50};
+if(!data.settings.eurRate) data.settings.eurRate = 41.50;
+let currentIngredients = [];
+
+function save() { lsSet('nexgen_v2', JSON.stringify(data)); updateHeaderStats(); }
+
+function updateHeaderStats() {
+  const cusCount = (data.customers||[]).length;
+  document.getElementById('headerStats').innerHTML =
+    data.formulas.length + ' formül · ' + data.materials.length + ' hammadde · ' + cusCount + ' müşteri';
+}
+
+function showToast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = err ? 'var(--red)' : 'var(--green)';
+  t.style.color = err ? 'white' : '#0f1117';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ======== TABS ========
+function showTab(name) {
+  const tabNames = ['hesapla','formuller','hammaddeler','tedarikciler','musteriler','admin'];
+  tabNames.forEach((t,i) => {
+    const tabEl = document.querySelectorAll('.tab')[i];
+    if(tabEl) tabEl.classList.toggle('active', t===name);
+    const pageEl = document.getElementById('tab-'+t);
+    if(pageEl) pageEl.classList.toggle('active', t===name);
+  });
+  if(name==='hammaddeler') renderMaterialList();
+  if(name==='tedarikciler') renderSupplierList();
+  if(name==='formuller') renderFormulaList();
+  if(name==='admin') renderUserList();
+  if(name==='musteriler') renderCustomerList();
+}
+
+// ======== INGREDIENTS ========
+function renderIngredients() {
+  const el = document.getElementById('ingredientList');
+  if(!currentIngredients.length) { el.innerHTML='<div class="empty">Formüle hammadde ekleyin</div>'; return; }
+  const mode = data.settings.currency; // 'TRY', 'USD', 'EUR'
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+
+  el.innerHTML = currentIngredients.map((ing,idx) => {
+    const mat = data.materials.find(m=>m.id===ing.materialId);
+    const price = mat ? mat.price : 0;
+
+    let priceHint = '';
+    if(price > 0) {
+      if(mode === 'USD') priceHint = `<span style="font-size:9px;color:var(--gold)"> = ${(price*usdRate).toFixed(2)}₺</span>`;
+      else if(mode === 'EUR') priceHint = `<span style="font-size:9px;color:var(--gold)"> = ${(price*eurRate).toFixed(2)}₺</span>`;
+      else priceHint = `<span style="font-size:9px;color:#6ba3ff"> = ${(price/usdRate).toFixed(4)}$</span>`;
+    }
+
+    const symbol = mode==='USD' ? '$' : mode==='EUR' ? '€' : '₺';
+
+    return `<div class="mat-row">
+      <div>
+        <div class="mat-name">${ing.name}</div>
+        <div class="mat-sup">${mat?mat.supplier||'–':'–'}</div>
+      </div>
+      <div>
+        <input type="number" value="${price}" step="0.0001" placeholder="${symbol}/${ing.unit}"
+          onchange="updateMatPrice(${ing.materialId},this.value)" title="Birim fiyat (${symbol}/${ing.unit})"
+          ${(!currentUser || currentUser.role !== 'admin') ? 'readonly style="opacity:0.5;cursor:not-allowed"' : ''}>
+        ${priceHint}
+      </div>
+      <div style="display:flex;align-items:center;gap:3px">
+        <input type="number" value="${ing.amount}" step="0.001" onchange="currentIngredients[${idx}].amount=parseFloat(this.value)||0" style="text-align:right">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap">${ing.unit}</span>
+      </div>
+      <button class="del-btn" onclick="removeIngredient(${idx})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function removeIngredient(idx) { currentIngredients.splice(idx,1); renderIngredients(); }
+
+function updateMatPrice(matId, val) {
+  const mat = data.materials.find(m=>m.id===matId);
+  if(mat){ mat.price = parseFloat(val)||0; save(); }
+}
+
+function updateMatCurrency(matId, cur) {
+  const mat = data.materials.find(m=>m.id===matId);
+  if(mat){ mat.currency = cur; save(); renderIngredients(); }
+}
+
+function openAddIngredient() {
+  const sel = document.getElementById('ingSelect');
+  sel.innerHTML = '<option value="">Seçiniz...</option>' +
+    data.materials.map(m=>`<option value="${m.id}">${m.name} (${m.unit})${m.price?' — '+m.price+'₺':''}</option>`).join('');
+  document.getElementById('addIngModal').classList.add('open');
+}
+
+function confirmAddIngredient() {
+  const matId = parseInt(document.getElementById('ingSelect').value);
+  const amount = parseFloat(document.getElementById('ingAmount').value)||0;
+  const unit = document.getElementById('ingUnit').value;
+  if(!matId){ showToast('Hammadde seçin!',true); return; }
+  const mat = data.materials.find(m=>m.id===matId);
+  currentIngredients.push({materialId:matId, name:mat.name, amount, unit});
+  renderIngredients();
+  closeModal('addIngModal');
+  document.getElementById('ingAmount').value='';
+}
+
+function clearForm() {
+  currentIngredients = [];
+  document.getElementById('formulAdi').value='';
+  document.getElementById('musteriAdi').value='';
+  document.getElementById('yogunluk').value='1.60';
+  document.getElementById('resultArea').style.display='none';
+  renderIngredients();
+}
+
+// ======== LOAD FORMULA ========
+function openLoadFormula() {
+  const el = document.getElementById('loadFormList');
+  el.innerHTML = data.formulas.map(f=>`
+    <div class="fcard" onclick="loadFormula(${f.id});closeModal('loadFormModal')">
+      <div class="fcard-name">${f.name}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">${f.ingredients.length} hammadde
+        ${f.totalL?'· L='+f.totalL+'kg':''}
+        ${f.totalS?'/ S='+f.totalS+'kg':''}
+      </div>
+    </div>`).join('');
+  document.getElementById('loadFormModal').classList.add('open');
+}
+
+function loadFormula(id) {
+  const f = data.formulas.find(f=>f.id==id);
+  if(!f) return;
+  document.getElementById('formulAdi').value = f.name;
+  document.getElementById('musteriAdi').value = f.customer||'';
+  document.getElementById('formulTarih').value = f.date||'';
+  document.getElementById('yogunluk').value = f.density||1.60;
+  currentIngredients = JSON.parse(JSON.stringify(f.ingredients));
+  renderIngredients();
+  document.getElementById('resultArea').style.display='none';
+  showToast('✅ '+f.name+' yüklendi');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ======== CALCULATE ========
+function getUsdRate() { return parseFloat(document.getElementById('usdRate').value)||38.50; }
+function getEurRate() { return parseFloat(document.getElementById('eurRate').value)||41.50; }
+
+function priceToTRY(price, currency) {
+  if(currency === 'USD') return price * getUsdRate();
+  if(currency === 'EUR') return price * getEurRate();
+  return price;
+}
+
+function getEffectiveCurrency(mat) {
+  const mode = data.settings.currency;
+  return mode; // 'TRY', 'USD', or 'EUR' applies globally
+}
+
+function calculate() {
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+  let totalKg=0, totalCostTRY=0, missing=0;
+  const rows=[];
+  currentIngredients.forEach(ing=>{
+    const mat = data.materials.find(m=>m.id===ing.materialId);
+    const rawPrice = mat ? mat.price : 0;
+    const cur = getEffectiveCurrency(mat);
+    const priceTRY = priceToTRY(rawPrice, cur);
+    if(rawPrice===0) missing++;
+    const kgAmt = ing.unit==='gr' ? ing.amount/1000 : ing.amount;
+    const costTRY = priceTRY * kgAmt;
+    totalKg += kgAmt; totalCostTRY += costTRY;
+    rows.push({name:ing.name, amount:ing.amount, unit:ing.unit, kgAmt, rawPrice, cur, priceTRY, costTRY});
+  });
+  const perKgTRY = totalKg>0 ? totalCostTRY/totalKg : 0;
+  const totalUSD = totalCostTRY / usdRate;
+  const totalEUR = totalCostTRY / eurRate;
+
+  document.getElementById('resTotalKg').textContent = totalKg.toFixed(3)+' kg';
+  document.getElementById('resPerKg').textContent = perKgTRY.toFixed(2)+' ₺';
+  document.getElementById('resPerKgSub').textContent = (perKgTRY/usdRate).toFixed(4)+' $/kg · '+(perKgTRY/eurRate).toFixed(4)+' €/kg';
+  document.getElementById('resTotalUSD').textContent = totalUSD.toFixed(2)+' $';
+  document.getElementById('resTotalUSDSub').textContent = '1$ = '+usdRate+'₺';
+  document.getElementById('resTotalEUR').textContent = totalEUR.toFixed(2)+' €';
+  document.getElementById('resTotalEURSub').textContent = '1€ = '+eurRate+'₺';
+  document.getElementById('resTotalBig').textContent = totalCostTRY.toFixed(2)+' ₺';
+  document.getElementById('resTotalSub').textContent =
+    totalUSD.toFixed(2)+' $ · '+totalEUR.toFixed(2)+' € · '+totalKg.toFixed(3)+' kg';
+
+  const tbody = document.getElementById('detailBody');
+  tbody.innerHTML = rows.map(r=>{
+    const pct = totalCostTRY>0?(r.costTRY/totalCostTRY*100).toFixed(1):'0.0';
+    let priceDisp;
+    if(r.rawPrice===0) {
+      priceDisp = '<span style="color:var(--muted)">–</span>';
+    } else if(r.cur==='USD') {
+      priceDisp = `<span class="usd-badge">$${r.rawPrice.toFixed(4)}</span> <span style="color:var(--muted);font-size:9px">= ${r.priceTRY.toFixed(2)}₺</span>`;
+    } else if(r.cur==='EUR') {
+      priceDisp = `<span class="eur-badge">€${r.rawPrice.toFixed(4)}</span> <span style="color:var(--muted);font-size:9px">= ${r.priceTRY.toFixed(2)}₺</span>`;
+    } else {
+      priceDisp = `<span class="try-badge">${r.rawPrice.toFixed(4)}₺</span> <span style="color:var(--muted);font-size:9px">= ${(r.rawPrice/usdRate).toFixed(4)}$</span>`;
+    }
+    return `<tr>
+      <td>${r.name}${r.rawPrice===0?'<span style="color:var(--red);font-size:9px;margin-left:4px">⚠ fiyat yok</span>':''}</td>
+      <td class="num">${r.amount} ${r.unit}</td>
+      <td class="num">${priceDisp}</td>
+      <td class="num gt">${r.costTRY.toFixed(2)} ₺<br>
+        <span style="color:#6ba3ff;font-size:10px">${(r.costTRY/usdRate).toFixed(3)} $</span>
+        <span style="color:#4ade80;font-size:10px"> · ${(r.costTRY/eurRate).toFixed(3)} €</span>
+      </td>
+      <td class="num">${pct}%</td>
+    </tr>`;
+  }).join('') + `<tr style="background:rgba(240,180,41,0.07)">
+    <td colspan="3" style="font-weight:700;color:var(--gold)">TOPLAM</td>
+    <td class="num gt" style="font-weight:700">${totalCostTRY.toFixed(2)} ₺<br>
+      <span style="color:#6ba3ff;font-size:11px">${totalUSD.toFixed(2)} $</span>
+      <span style="color:#4ade80;font-size:11px"> · ${totalEUR.toFixed(2)} €</span>
+    </td>
+    <td class="num">100%</td>
+  </tr>`;
+  document.getElementById('resultArea').style.display='block';
+  document.getElementById('resultArea').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ======== SAVE FORMULA ========
+function saveFormula() {
+  const name = document.getElementById('formulAdi').value.trim();
+  if(!name){ showToast('Formül adı girin!',true); return; }
+  const nf = {
+    id: Date.now(),
+    name,
+    customer: document.getElementById('musteriAdi').value,
+    date: document.getElementById('formulTarih').value,
+    density: parseFloat(document.getElementById('yogunluk').value)||1.60,
+    ingredients: JSON.parse(JSON.stringify(currentIngredients))
+  };
+  const idx = data.formulas.findIndex(f=>f.name===name);
+  if(idx>=0) data.formulas[idx]=nf; else data.formulas.push(nf);
+  save();
+  showToast('✅ Kaydedildi: '+name);
+}
+
+// ======== FORMULA LIST ========
+function renderFormulaList() {
+  const el = document.getElementById('formulaList');
+  if(!data.formulas.length){ el.innerHTML='<div class="empty">Formül bulunamadı</div>'; return; }
+  el.innerHTML = data.formulas.map(f=>{
+    let cost=0;
+    f.ingredients.forEach(ing=>{
+      const mat=data.materials.find(m=>m.id===ing.materialId);
+      const p=mat?mat.price:0;
+      const kg=ing.unit==='gr'?ing.amount/1000:ing.amount;
+      cost+=p*kg;
+    });
+    const colors = {ALTIN:'#f0b429',BRONZ:'#cd7f32',GÜMÜŞ:'#aaa',SEDEF:'#8fbc8f','ZT-109':'#f5a623'};
+    const col = Object.keys(colors).find(k=>f.name.toUpperCase().includes(k));
+    return `<div class="fcard" onclick="loadFormula(${f.id});showTab('hesapla')">
+      ${col?`<span class="color-dot" style="background:${colors[col]}"></span>`:''}
+      <span class="fcard-name">${f.name}</span>
+      <span class="fcard-cost">${cost>0?cost.toFixed(2)+' ₺':'fiyat gir'}</span>
+      <div class="fcard-meta">
+        <span class="badge badge-gold">${f.ingredients.length} hammadde</span>
+        ${f.date?`<span class="badge badge-blue">${f.date}</span>`:''}
+        ${f.totalL?`<span class="badge badge-green">L=${f.totalL}kg</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ======== MATERIALS ========
+function addMaterial() {
+  const name = document.getElementById('matName').value.trim();
+  if(!name){ showToast('Hammadde adı girin!',true); return; }
+  data.materials.push({id:Date.now(), name,
+    category:document.getElementById('matCat').value,
+    price:parseFloat(document.getElementById('matPrice').value)||0,
+    unit:document.getElementById('matUnit').value,
+    supplier:document.getElementById('matSupplier').value,
+    currency: document.getElementById('matCurrency').value
+  });
+  save();
+  document.getElementById('matName').value='';
+  document.getElementById('matPrice').value='';
+  renderMaterialList();
+  showToast('✅ Eklendi: '+name);
+}
+
+function renderMaterialList() {
+  const q = (document.getElementById('matSearch').value||'').toLowerCase();
+  const filtered = data.materials.filter(m=>!q||m.name.toLowerCase().includes(q)||(m.supplier||'').toLowerCase().includes(q));
+  document.getElementById('matCount').textContent = '('+filtered.length+'/'+data.materials.length+')';
+  const el = document.getElementById('materialList');
+  if(!filtered.length){ el.innerHTML='<div class="empty">Sonuç bulunamadı</div>'; return; }
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+  el.innerHTML = filtered.map(m=>{
+    const cur = m.currency||'TRY';
+    let convHint = '';
+    if(m.price > 0) {
+      if(cur==='USD') convHint = `<span class="usd-badge">$${m.price.toFixed(4)}</span> = <span style="color:var(--gold)">${(m.price*usdRate).toFixed(2)}₺</span>`;
+      else if(cur==='EUR') convHint = `<span class="eur-badge">€${m.price.toFixed(4)}</span> = <span style="color:var(--gold)">${(m.price*eurRate).toFixed(2)}₺</span>`;
+      else convHint = `<span class="try-badge">${m.price.toFixed(4)}₺</span> = <span style="color:#6ba3ff">${(m.price/usdRate).toFixed(4)}$</span> / <span style="color:#4ade80">${(m.price/eurRate).toFixed(4)}€</span>`;
+    } else {
+      convHint = '<span style="color:var(--muted);font-size:11px">fiyat girilmedi</span>';
+    }
+    return `<div class="mat-row-cur">
+      <div><div class="mat-name">${m.name}</div><div class="mat-sup">${m.supplier||'–'} · ${m.unit}</div></div>
+      <select onchange="updateMatCurrencyById(${m.id},this.value)" style="padding:5px 4px;font-size:11px">
+        <option value="TRY" ${cur==='TRY'?'selected':''}>₺ TL</option>
+        <option value="USD" ${cur==='USD'?'selected':''}>$ USD</option>
+        <option value="EUR" ${cur==='EUR'?'selected':''}>€ EUR</option>
+      </select>
+      <input type="number" value="${m.price}" step="0.0001" placeholder="0.00"
+        onchange="updateMatPriceById(${m.id},this.value)"
+        title="${cur==='USD'?'Dolar':'cur'==='EUR'?'Euro':'Lira'} fiyat / ${m.unit}">
+      <div style="font-size:10px;text-align:right;line-height:1.6">${convHint}</div>
+      <button class="del-btn" onclick="deleteMaterial(${m.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function updateMatPriceById(id,val) {
+  const mat=data.materials.find(m=>m.id===id);
+  if(mat){
+    mat.price=parseFloat(val)||0;
+    save();
+    renderFormulaList();
+    renderIngredients();
+    const resultArea = document.getElementById('resultArea');
+    if(resultArea && resultArea.style.display !== 'none') {
+      calculate();
+    }
+  }
+}
+
+function updateMatCurrencyById(id, cur) {
+  const mat=data.materials.find(m=>m.id===id);
+  if(mat){
+    mat.currency=cur;
+    save();
+    renderMaterialList();
+    renderFormulaList();
+    renderIngredients();
+    const resultArea = document.getElementById('resultArea');
+    if(resultArea && resultArea.style.display !== 'none') {
+      calculate();
+    }
+  }
+}
+
+function deleteMaterial(id) {
+  if(!confirm('Bu hammaddeyi silmek istiyor musunuz?')) return;
+  data.materials=data.materials.filter(m=>m.id!==id);
+  save(); renderMaterialList();
+}
+
+// ======== SUPPLIERS ========
+let activeSupId = null;
+let editingSupMatId = null;
+
+function addSupplier() {
+  const name = document.getElementById('supName').value.trim();
+  if(!name){showToast('Firma adı girin!',true);return;}
+  data.suppliers.push({
+    id: Date.now(),
+    name,
+    contact: document.getElementById('supContact').value.trim(),
+    address: document.getElementById('supAddress').value.trim(),
+    materials: [] // now array of material objects
+  });
+  save();
+  document.getElementById('supName').value='';
+  document.getElementById('supContact').value='';
+  document.getElementById('supAddress').value='';
+  renderSupplierList();
+  updateSupplierDropdowns();
+  showToast('✅ Eklendi: '+name);
+}
+
+function renderSupplierList() {
+  const el = document.getElementById('supplierList');
+  const q = (document.getElementById('supSearch')||{value:''}).value.toLowerCase();
+  const filtered = data.suppliers.filter(s =>
+    !q || s.name.toLowerCase().includes(q) || (s.contact||'').toLowerCase().includes(q)
+  );
+  document.getElementById('supCount').textContent = '('+data.suppliers.length+' kayıt)';
+  if(!filtered.length){el.innerHTML='<div class="empty">Tedarikçi bulunamadı</div>';return;}
+  el.innerHTML = filtered.map(s => {
+    // support both old string format and new array format
+    const mats = Array.isArray(s.materials)
+      ? s.materials
+      : (s.materials ? s.materials.split(',').map(m=>({name:m.trim()})) : []);
+    const matCount = mats.filter(m=>m&&m.name).length;
+    return `
+    <div class="fcard" onclick="showSupplierDetail(${s.id})">
+      <div class="fcard-name" style="font-size:15px">🏭 ${s.name}</div>
+      ${s.contact?`<div style="font-size:11px;color:var(--muted);margin-top:2px">📞 ${s.contact}</div>`:''}
+      ${s.address?`<div style="font-size:11px;color:var(--muted)">📍 ${s.address}</div>`:''}
+      <div style="margin-top:5px">
+        ${matCount?`<span class="badge badge-gold">📦 ${matCount} Hammadde</span>`:'<span style="font-size:10px;color:var(--muted)">Hammadde girilmemiş</span>'}
+      </div>
+      <button class="del-btn" style="position:absolute;right:12px;top:12px" onclick="event.stopPropagation();deleteSupplier(${s.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function showSupplierDetail(id) {
+  const s = data.suppliers.find(x=>x.id===id);
+  if(!s) return;
+  activeSupId = id;
+  cancelEditSupplier();
+  cancelSupMaterial();
+
+  document.getElementById('supPanelTitle').textContent = '🏭 ' + s.name;
+  // support old string format
+  if(!Array.isArray(s.materials)) {
+    s.materials = s.materials ? s.materials.split(',').map(m=>({id:Date.now()+Math.random(),name:m.trim(),category:'',price:0,unit:'kg',currency:'TRY'})).filter(m=>m.name) : [];
+    save();
+  }
+  document.getElementById('supPanelSub').textContent = s.materials.length + ' hammadde';
+  renderSupPanelInfo(s);
+  renderSupPanelMaterials(s);
+  document.getElementById('supDetailPanel').style.display = 'block';
+  document.getElementById('supDetailPanel').scrollTop = 0;
+}
+
+function renderSupPanelInfo(s) {
+  document.getElementById('supPanelInfo').innerHTML = `
+    <div class="card-title">📇 Firma Bilgileri</div>
+    <div style="display:grid;gap:7px">
+      ${s.contact?`<div style="font-size:13px">📞 <strong>İletişim:</strong> <a href="tel:${s.contact}" style="color:var(--nx-teal)">${s.contact}</a></div>`:''}
+      ${s.address?`<div style="font-size:13px">📍 <strong>Adres/Not:</strong> ${s.address}</div>`:''}
+      ${!s.contact&&!s.address?'<div style="color:var(--muted);font-size:12px">Bilgi girilmemiş</div>':''}
+    </div>`;
+}
+
+function openEditSupplier() {
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  document.getElementById('editSupName').value = s.name;
+  document.getElementById('editSupContact').value = s.contact||'';
+  document.getElementById('editSupAddress').value = s.address||'';
+  document.getElementById('supEditForm').style.display = 'block';
+  document.getElementById('supEditForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveEditSupplier() {
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  const name = document.getElementById('editSupName').value.trim();
+  if(!name){showToast('Firma adı girin!',true);return;}
+  s.name = name;
+  s.contact = document.getElementById('editSupContact').value.trim();
+  s.address = document.getElementById('editSupAddress').value.trim();
+  save();
+  cancelEditSupplier();
+  document.getElementById('supPanelTitle').textContent = '🏭 ' + s.name;
+  renderSupPanelInfo(s);
+  updateSupplierDropdowns();
+  showToast('✅ Tedarikçi güncellendi');
+}
+
+function cancelEditSupplier() {
+  const el = document.getElementById('supEditForm');
+  if(el) el.style.display = 'none';
+}
+
+function renderSupPanelMaterials(s) {
+  const el = document.getElementById('supPanelMaterials');
+  const mats = s.materials || [];
+  document.getElementById('supPanelSub').textContent = mats.length + ' hammadde';
+  if(!mats.length){
+    el.innerHTML='<div class="empty">Henüz hammadde eklenmemiş. "+ Hammadde Ekle" ile ekleyin.</div>';
+    return;
+  }
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+  el.innerHTML = mats.map(m => {
+    const cur = m.currency||'TRY';
+    let priceStr = '–';
+    if(m.price > 0) {
+      if(cur==='USD') priceStr = `$${m.price} <span style="color:var(--muted);font-size:10px">= ${(m.price*usdRate).toFixed(2)}₺</span>`;
+      else if(cur==='EUR') priceStr = `€${m.price} <span style="color:var(--muted);font-size:10px">= ${(m.price*eurRate).toFixed(2)}₺</span>`;
+      else priceStr = `${m.price}₺`;
+    }
+    const catColors = {polimer:'badge-gold',katki:'badge-blue',boya:'badge-green',kimyasal:'badge-gold',dolgu:'badge-blue'};
+    return `
+    <div class="fcard" style="cursor:default;padding:10px 13px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px;color:var(--text)">${m.name}</div>
+          <div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+            ${m.category?`<span class="badge ${catColors[m.category]||'badge-gold'}">${m.category}</span>`:''}
+            <span style="font-size:11px;color:var(--muted)">${m.unit||'kg'}</span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--green)">${priceStr}</div>
+          <div style="display:flex;gap:5px;margin-top:4px;justify-content:flex-end">
+            <button class="btn btn-outline btn-sm" onclick="openEditSupMat('${m.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSupMat('${m.id}')">×</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddSupMaterial() {
+  editingSupMatId = null;
+  document.getElementById('supMatName').value='';
+  document.getElementById('supMatPrice').value='';
+  document.getElementById('supMatCat').value='polimer';
+  document.getElementById('supMatUnit').value='kg';
+  document.getElementById('supMatCurrency').value='TRY';
+  // populate datalist with existing material names
+  document.getElementById('supMatDatalist').innerHTML =
+    data.materials.map(m=>`<option value="${m.name}">`).join('');
+  document.getElementById('supMaterialForm').style.display='block';
+  document.getElementById('supMaterialForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function openEditSupMat(matId) {
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  const m = s.materials.find(x=>String(x.id)===String(matId));
+  if(!m) return;
+  editingSupMatId = matId;
+  document.getElementById('supMatName').value = m.name;
+  document.getElementById('supMatPrice').value = m.price||'';
+  document.getElementById('supMatCat').value = m.category||'polimer';
+  document.getElementById('supMatUnit').value = m.unit||'kg';
+  document.getElementById('supMatCurrency').value = m.currency||'TRY';
+  document.getElementById('supMatDatalist').innerHTML =
+    data.materials.map(x=>`<option value="${x.name}">`).join('');
+  document.getElementById('supMaterialForm').style.display='block';
+  document.getElementById('supMaterialForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveSupMaterial() {
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  const name = document.getElementById('supMatName').value.trim();
+  if(!name){showToast('Hammadde adı girin!',true);return;}
+  const matData = {
+    id: editingSupMatId || (Date.now()+'_'+Math.floor(Math.random()*1000)),
+    name,
+    category: document.getElementById('supMatCat').value,
+    price: parseFloat(document.getElementById('supMatPrice').value)||0,
+    unit: document.getElementById('supMatUnit').value,
+    currency: document.getElementById('supMatCurrency').value
+  };
+  if(editingSupMatId) {
+    const idx = s.materials.findIndex(x=>String(x.id)===String(editingSupMatId));
+    if(idx>=0) s.materials[idx] = matData;
+  } else {
+    s.materials.push(matData);
+  }
+  // Also sync to main materials list if exists
+  const existing = data.materials.find(m=>m.name.toLowerCase()===name.toLowerCase());
+  if(existing) {
+    existing.price = matData.price;
+    existing.currency = matData.currency;
+    existing.supplier = s.name;
+  }
+  save();
+  cancelSupMaterial();
+  renderSupPanelMaterials(s);
+  updateSupplierDropdowns();
+  showToast('✅ ' + (editingSupMatId?'Güncellendi':'Eklendi') + ': ' + name);
+  editingSupMatId = null;
+}
+
+function cancelSupMaterial() {
+  const el = document.getElementById('supMaterialForm');
+  if(el) el.style.display = 'none';
+  editingSupMatId = null;
+}
+
+function deleteSupMat(matId) {
+  if(!confirm('Bu hammaddeyi tedarikçiden kaldırmak istiyor musunuz?')) return;
+  const s = data.suppliers.find(x=>x.id===activeSupId);
+  if(!s) return;
+  s.materials = s.materials.filter(m=>String(m.id)!==String(matId));
+  save();
+  renderSupPanelMaterials(s);
+  showToast('Hammadde kaldırıldı');
+}
+
+function closeSupDetail() {
+  document.getElementById('supDetailPanel').style.display='none';
+  activeSupId = null;
+  renderSupplierList();
+}
+
+function deleteSupplier(id) {
+  if(!confirm('Bu tedarikçiyi silmek istiyor musunuz?')) return;
+  data.suppliers = data.suppliers.filter(s=>s.id!==id);
+  save();
+  renderSupplierList();
+  updateSupplierDropdowns();
+  showToast('Tedarikçi silindi');
+}
+
+function updateSupplierDropdowns() {
+  const opts='<option value="">Seçiniz...</option>'+data.suppliers.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  const el = document.getElementById('matSupplier');
+  if(el) el.innerHTML=opts;
+}
+
+function setCurrency(mode) {
+  data.settings.currency = mode;
+  save();
+  ['TRY','USD','EUR'].forEach(m => {
+    document.getElementById('cur'+m).classList.toggle('active', m===mode);
+  });
+  renderIngredients();
+}
+
+function onRateChange(type) {
+  const usd = parseFloat(document.getElementById('usdRate').value)||38.50;
+  const eur = parseFloat(document.getElementById('eurRate').value)||41.50;
+  data.settings.usdRate = usd;
+  data.settings.eurRate = eur;
+  save();
+  if(document.getElementById('tab-hammaddeler').classList.contains('active')) renderMaterialList();
+}
+
+// ======== TCMB KUR ÇEKİCİ ========
+async function fetchRatesFromTCMB() {
+  setRateStatus('⏳ Kur güncelleniyor...', '#f0b429');
+  const btn = document.getElementById('refreshBtn');
+  if(btn) btn.style.opacity = '0.5';
+
+  // 3 farklı ücretsiz API dene - hepsi CORS destekli
+  const apis = [
+    {
+      url: 'https://api.frankfurter.app/latest?base=USD&symbols=TRY,EUR',
+      parse: d => ({ usd: d.rates?.TRY, eur: d.rates?.TRY / d.rates?.EUR })
+    },
+    {
+      url: 'https://open.er-api.com/v6/latest/USD',
+      parse: d => ({ usd: d.rates?.TRY, eur: d.rates?.TRY / d.rates?.EUR })
+    },
+    {
+      url: 'https://api.exchangerate-api.com/v4/latest/USD',
+      parse: d => ({ usd: d.rates?.TRY, eur: d.rates?.TRY / d.rates?.EUR })
+    }
+  ];
+
+  for(const api of apis) {
+    try {
+      const res = await fetch(api.url, {signal: AbortSignal.timeout(6000)});
+      if(!res.ok) continue;
+      const d = await res.json();
+      const rates = api.parse(d);
+      if(rates.usd && rates.eur && rates.usd > 1 && rates.eur > 1) {
+        document.getElementById('usdRate').value = rates.usd.toFixed(4);
+        document.getElementById('eurRate').value = rates.eur.toFixed(4);
+        data.settings.usdRate = rates.usd;
+        data.settings.eurRate = rates.eur;
+        data.settings.rateDate = new Date().toLocaleDateString('tr-TR');
+        save();
+        setRateStatus('✅ Güncel · ' + data.settings.rateDate, '#22c55e');
+        if(document.getElementById('tab-hammaddeler').classList.contains('active')) renderMaterialList();
+        if(btn) btn.style.opacity = '1';
+        return;
+      }
+    } catch(e) { /* try next */ }
+  }
+  setRateStatus('⚠ Bağlantı yok · Manuel girin', '#ef4444');
+  if(btn) btn.style.opacity = '1';
+}
+
+function setRateStatus(msg, color) {
+  const el = document.getElementById('rateStatus');
+  if(el) { el.textContent = msg; el.style.color = color; }
+}
+
+// ======== CUSTOMERS ========
+let activeCusId = null;
+let cusFormIngredients = [];
+
+function addCustomer() {
+  const name = document.getElementById('cusName').value.trim();
+  if(!name){showToast('Müşteri adı girin!',true);return;}
+  if(!data.customers) data.customers = [];
+  data.customers.push({
+    id: Date.now(),
+    name,
+    contact: document.getElementById('cusContact').value.trim(),
+    phone: document.getElementById('cusPhone').value.trim(),
+    email: document.getElementById('cusEmail').value.trim(),
+    note: document.getElementById('cusNote').value.trim(),
+    createdAt: new Date().toISOString().split('T')[0]
+  });
+  save();
+  document.getElementById('cusName').value='';
+  document.getElementById('cusContact').value='';
+  document.getElementById('cusPhone').value='';
+  document.getElementById('cusEmail').value='';
+  document.getElementById('cusNote').value='';
+  renderCustomerList();
+  updateHeaderStats();
+  showToast('✅ Müşteri eklendi: '+name);
+}
+
+function renderCustomerList() {
+  if(!data.customers) data.customers = [];
+  const search = (document.getElementById('cusSearch')||{value:''}).value.toLowerCase();
+  const el = document.getElementById('customerList');
+  const filtered = data.customers.filter(c =>
+    c.name.toLowerCase().includes(search) ||
+    (c.contact||'').toLowerCase().includes(search) ||
+    (c.email||'').toLowerCase().includes(search)
+  );
+  document.getElementById('cusCount').textContent = '(' + data.customers.length + ' kayıt)';
+  if(!filtered.length){el.innerHTML='<div class="empty">Müşteri bulunamadı</div>';return;}
+  el.innerHTML = filtered.map(c => {
+    const formulaCount = (data.formulas||[]).filter(f => f.customer === c.name).length;
+    return `
+    <div class="fcard" onclick="showCustomerDetail(${c.id})">
+      <div class="fcard-name" style="font-size:15px">🏢 ${c.name}</div>
+      ${c.contact?`<div style="font-size:11px;color:var(--muted);margin-top:2px">👤 ${c.contact}</div>`:''}
+      ${c.phone?`<div style="font-size:11px;color:var(--muted)">📞 ${c.phone}</div>`:''}
+      ${c.email?`<div style="font-size:11px;color:var(--muted)">✉️ ${c.email}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:5px;align-items:center;flex-wrap:wrap;">
+        ${formulaCount?`<span class="badge badge-gold">📋 ${formulaCount} Formül</span>`:''}
+        <span style="font-size:10px;color:var(--muted)">${c.createdAt||''}</span>
+      </div>
+      <button class="del-btn" style="position:absolute;right:12px;top:12px" onclick="event.stopPropagation();deleteCustomer(${c.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function showCustomerDetail(id) {
+  if(!data.customers) data.customers = [];
+  const c = data.customers.find(x => x.id === id);
+  if(!c) return;
+  activeCusId = id;
+  cancelCusFormula();
+
+  document.getElementById('cusPanelTitle').textContent = '🏢 ' + c.name;
+  const formulas = (data.formulas||[]).filter(f => f.customer === c.name);
+  document.getElementById('cusPanelSub').textContent = formulas.length + ' formül · ' + (c.createdAt||'');
+
+  document.getElementById('cusPanelInfo').innerHTML = `
+    <div class="card-title">📇 İletişim Bilgileri</div>
+    <div style="display:grid;gap:7px">
+      ${c.contact?`<div style="font-size:13px">👤 <strong>Yetkili:</strong> ${c.contact}</div>`:''}
+      ${c.phone?`<div style="font-size:13px">📞 <strong>Telefon:</strong> <a href="tel:${c.phone}" style="color:var(--nx-teal)">${c.phone}</a></div>`:''}
+      ${c.email?`<div style="font-size:13px">✉️ <strong>E-posta:</strong> <a href="mailto:${c.email}" style="color:var(--nx-teal)">${c.email}</a></div>`:''}
+      ${c.note?`<div style="font-size:13px">📝 <strong>Not:</strong> ${c.note}</div>`:''}
+      ${!c.contact&&!c.phone&&!c.email&&!c.note?'<div style="color:var(--muted);font-size:12px">İletişim bilgisi girilmemiş</div>':''}
+    </div>`;
+
+  renderCusPanelFormulas(c.name);
+  document.getElementById('cusDetailPanel').style.display = 'block';
+  document.getElementById('cusDetailPanel').scrollTop = 0;
+}
+
+function renderCusPanelFormulas(cusName) {
+  const formulas = (data.formulas||[]).filter(f => f.customer === cusName);
+  const el = document.getElementById('cusPanelFormulas');
+  if(!formulas.length){
+    el.innerHTML='<div class="empty">Henüz formül eklenmemiş. "+ Yeni Formül" ile ekleyin.</div>';
+    return;
+  }
+  const usdRate = getUsdRate();
+  const eurRate = getEurRate();
+  el.innerHTML = formulas.map(f => {
+    let cost = 0;
+    f.ingredients.forEach(ing => {
+      const mat = data.materials.find(m => m.id === ing.materialId);
+      const p = mat ? mat.price : 0;
+      const kg = ing.unit==='gr' ? ing.amount/1000 : ing.amount;
+      cost += p * kg;
+    });
+    return `<div class="fcard" style="cursor:default">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="flex:1">
+          <div class="fcard-name">${f.name}</div>
+          <div class="fcard-meta" style="margin-top:4px">
+            <span class="badge badge-gold">${f.ingredients.length} hammadde</span>
+            ${f.date?`<span class="badge badge-blue">${f.date}</span>`:''}
+            ${f.totalL?`<span class="badge badge-green">L=${f.totalL}kg</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--green)">${cost>0?cost.toFixed(2)+' ₺':'–'}</div>
+          <div style="display:flex;gap:5px;margin-top:4px">
+            <button class="btn btn-outline btn-sm" onclick="loadCusFormulaToHesapla(${f.id})">⚡ Hesapla</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCusFormula(${f.id})">×</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function closeCusDetail() {
+  document.getElementById('cusDetailPanel').style.display = 'none';
+  activeCusId = null;
+  renderCustomerList();
+}
+
+function openNewFormulaForCustomer() {
+  cusFormIngredients = [];
+  document.getElementById('cusFormName').value = '';
+  document.getElementById('cusFormDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('cusFormDensity').value = '1.60';
+  document.getElementById('cusFormTotalL').value = '';
+  renderCusFormIngList();
+  document.getElementById('cusFormulaForm').style.display = 'block';
+  document.getElementById('cusFormulaForm').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cancelCusFormula() {
+  const el = document.getElementById('cusFormulaForm');
+  if(el) el.style.display = 'none';
+  cusFormIngredients = [];
+}
+
+function renderCusFormIngList() {
+  const el = document.getElementById('cusFormIngList');
+  if(!cusFormIngredients.length){
+    el.innerHTML='<div class="empty" style="padding:12px">Hammadde eklenmedi</div>';return;
+  }
+  el.innerHTML = cusFormIngredients.map((ing,i) => `
+    <div class="mat-row" style="margin-bottom:5px">
+      <div><div class="mat-name">${ing.name}</div><div class="mat-sup">${ing.unit}</div></div>
+      <input type="number" value="${ing.amount}" step="0.001"
+        onchange="cusFormIngredients[${i}].amount=parseFloat(this.value)||0"
+        style="width:88px;text-align:right">
+      <span style="font-size:10px;color:var(--muted)">${ing.unit}</span>
+      <button class="del-btn" onclick="cusFormIngredients.splice(${i},1);renderCusFormIngList()">×</button>
+    </div>`).join('');
+}
+
+function openCusIngModal() {
+  const sel = document.getElementById('cusIngSelect');
+  sel.innerHTML = '<option value="">Seçiniz...</option>' +
+    data.materials.map(m=>`<option value="${m.id}">${m.name} (${m.unit})</option>`).join('');
+  document.getElementById('cusIngAmount').value = '';
+  document.getElementById('cusIngModal').classList.add('open');
+}
+
+function confirmCusIng() {
+  const matId = parseInt(document.getElementById('cusIngSelect').value);
+  const amount = parseFloat(document.getElementById('cusIngAmount').value)||0;
+  const unit = document.getElementById('cusIngUnit').value;
+  if(!matId){showToast('Hammadde seçin!',true);return;}
+  if(!amount){showToast('Miktar girin!',true);return;}
+  const mat = data.materials.find(m=>m.id===matId);
+  cusFormIngredients.push({materialId:matId, name:mat.name, amount, unit});
+  renderCusFormIngList();
+  closeModal('cusIngModal');
+}
+
+function loadBaseFormula() {
+  const el = document.getElementById('baseFormList');
+  el.innerHTML = (data.formulas||[]).map(f=>`
+    <div class="fcard" onclick="applyBaseFormula(${f.id})">
+      <div class="fcard-name" style="font-size:14px">${f.name}</div>
+      <div class="fcard-meta">${f.ingredients.length} hammadde · ${f.date||''}</div>
+    </div>`).join('') || '<div class="empty">Kayıtlı formül yok</div>';
+  document.getElementById('baseFormModal').classList.add('open');
+}
+
+function applyBaseFormula(id) {
+  const f = data.formulas.find(x=>x.id===id);
+  if(!f) return;
+  cusFormIngredients = f.ingredients.map(i=>({...i}));
+  document.getElementById('cusFormName').value = f.name;
+  document.getElementById('cusFormDensity').value = f.density||1.60;
+  if(f.totalL) document.getElementById('cusFormTotalL').value = f.totalL;
+  renderCusFormIngList();
+  closeModal('baseFormModal');
+  showToast('✅ "'+f.name+'" yüklendi');
+}
+
+function saveCusFormula() {
+  const c = (data.customers||[]).find(x=>x.id===activeCusId);
+  if(!c){showToast('Müşteri bulunamadı!',true);return;}
+  const name = document.getElementById('cusFormName').value.trim();
+  if(!name){showToast('Formül adı girin!',true);return;}
+  if(!cusFormIngredients.length){showToast('En az bir hammadde ekleyin!',true);return;}
+  const nf = {
+    id: Date.now(),
+    name,
+    customer: c.name,
+    date: document.getElementById('cusFormDate').value,
+    density: parseFloat(document.getElementById('cusFormDensity').value)||1.60,
+    totalL: parseFloat(document.getElementById('cusFormTotalL').value)||null,
+    ingredients: JSON.parse(JSON.stringify(cusFormIngredients))
+  };
+  if(!data.formulas) data.formulas = [];
+  data.formulas.push(nf);
+  save();
+  cancelCusFormula();
+  renderCusPanelFormulas(c.name);
+  document.getElementById('cusPanelSub').textContent =
+    (data.formulas.filter(f=>f.customer===c.name).length) + ' formül · ' + (c.createdAt||'');
+  showToast('✅ Formül kaydedildi: '+name);
+}
+
+function deleteCusFormula(id) {
+  if(!confirm('Bu formülü silmek istiyor musunuz?')) return;
+  data.formulas = (data.formulas||[]).filter(f=>f.id!==id);
+  save();
+  const c = (data.customers||[]).find(x=>x.id===activeCusId);
+  if(c) renderCusPanelFormulas(c.name);
+  showToast('Formül silindi');
+}
+
+function loadCusFormulaToHesapla(id) {
+  document.getElementById('cusDetailPanel').style.display = 'none';
+  loadFormula(id);
+  showTab('hesapla');
+  showToast('✅ Formül yüklendi');
+}
+
+function deleteCustomer(id) {
+  if(!confirm('Bu müşteriyi silmek istiyor musunuz?')) return;
+  data.customers = (data.customers||[]).filter(c => c.id !== id);
+  save();
+  renderCustomerList();
+  updateHeaderStats();
+  showToast('Müşteri silindi');
+}
+
+function updateCustomerDropdown() {
+  if(!data.customers) data.customers = [];
+  let dl = document.getElementById('musteriDatalist');
+  if(!dl){
+    dl = document.createElement('datalist');
+    dl.id = 'musteriDatalist';
+    document.body.appendChild(dl);
+    const inp = document.getElementById('musteriAdi');
+    if(inp) inp.setAttribute('list','musteriDatalist');
+  }
+  dl.innerHTML = data.customers.map(c=>`<option value="${c.name}">`).join('');
+}
+
+// ======== INIT ========
+function init() {
+  renderLoginUsers();
+  if(!data.settings) data.settings = {currency:'TRY', usdRate:38.50, eurRate:41.50};
+  if(!data.customers) data.customers = [];
+  document.getElementById('formulTarih').value=new Date().toISOString().split('T')[0];
+  document.getElementById('usdRate').value = data.settings.usdRate || 38.50;
+  document.getElementById('eurRate').value = data.settings.eurRate || 41.50;
+  // Show last known rate date if available
+  if(data.settings.rateDate) setRateStatus('📅 Son kur: ' + data.settings.rateDate, '#8892a4');
+  setCurrency(data.settings.currency || 'TRY');
+  updateSupplierDropdowns();
+  updateCustomerDropdown();
+  updateHeaderStats();
+  loadFormula(1);
+  // Auto-fetch rates on load
+  fetchRatesFromTCMB();
+  if(!_lsOk) document.getElementById('noStorageBanner').style.display='block';
+}
+
+init();
+</script>
+</body>
+</html>
