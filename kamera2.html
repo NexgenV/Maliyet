@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexVision AI</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap');
+
+:root {
+  /* macOS vibes */
+  --mac-blur: rgba(28, 28, 30, 0.85);
+  --mac-glass: rgba(44, 44, 46, 0.6);
+  --mac-border: rgba(255,255,255,0.08);
+  --mac-border2: rgba(255,255,255,0.14);
+  --mac-red: #ff5f57;
+  --mac-yellow: #febc2e;
+  --mac-green: #28c840;
+
+  /* NV palette */
+  --bg0: #07090d;
+  --bg1: #0d1117;
+  --bg2: #111820;
+  --bg3: #1a2433;
+  --border: #1e2a38;
+  --border2: #2a3a50;
+  --text1: #d0dae8;
+  --text2: #7a9abf;
+  --text3: #3a5a7a;
+  --blue: #1a6fc4;
+  --blue2: #2563eb;
+  --green: #22c55e;
+  --red: #ef4444;
+  --orange: #f97316;
+  --amber: #f59e0b;
+  --mono: 'SF Mono', 'Courier New', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+}
+
+html, body {
+  height: 100%; font-family: var(--sans);
+  background: var(--bg0); color: var(--text1);
+  overflow: hidden; -webkit-font-smoothing: antialiased;
+}
+
+/* ════════════════════════════════
+   LOGIN SCREEN
+════════════════════════════════ */
+#login-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: #07090d;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+#login-screen.hidden {
+  opacity: 0; transform: scale(1.03); pointer-events: none;
+}
+
+/* macOS window chrome */
+.mac-window {
+  width: 420px;
+  background: var(--mac-blur);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--mac-border);
+  border-radius: 14px;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.7), 0 0 0 0.5px rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.mac-titlebar {
+  height: 38px;
+  background: rgba(40,40,42,0.9);
+  border-bottom: 1px solid var(--mac-border);
+  display: flex; align-items: center;
+  padding: 0 14px; gap: 8px;
+  position: relative;
+}
+.mac-titlebar-title {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.5);
+  letter-spacing: 0.2px;
+}
+.mac-dot {
+  width: 12px; height: 12px; border-radius: 50%; cursor: pointer;
+  transition: filter 0.15s;
+}
+.mac-dot:hover { filter: brightness(1.3); }
+.mac-dot.r { background: var(--mac-red); }
+.mac-dot.y { background: var(--mac-yellow); }
+.mac-dot.g { background: var(--mac-green); }
+
+.mac-body { padding: 28px 28px 24px; }
+
+/* Logo area */
+.login-logo {
+  display: flex; flex-direction: column; align-items: center;
+  margin-bottom: 24px;
+}
+.login-logo-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(135deg, #1a6fc4, #0d47a1);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 8px 24px rgba(26,111,196,0.4);
+}
+.login-logo-icon svg { width: 30px; height: 30px; fill: white; }
+.login-title { font-size: 20px; font-weight: 600; color: white; letter-spacing: -0.3px; }
+.login-sub { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 3px; }
+
+/* Form fields */
+.field-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+
+.field-row { display: flex; gap: 8px; }
+.field-row .field { flex: 1; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-size: 11px; font-weight: 500;
+  color: rgba(255,255,255,0.4); letter-spacing: 0.3px; text-transform: uppercase;
+}
+.field input {
+  width: 100%; padding: 9px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px; color: white; font-size: 13px;
+  font-family: var(--mono); outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.field input::placeholder { color: rgba(255,255,255,0.2); }
+.field input:focus {
+  background: rgba(26,111,196,0.1);
+  border-color: rgba(26,111,196,0.6);
+}
+.field input.error { border-color: rgba(239,68,68,0.6); }
+
+/* Protocol select */
+.proto-select {
+  display: flex; gap: 4px; margin-bottom: 10px;
+}
+.proto-btn {
+  flex: 1; padding: 7px; font-size: 11px; font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
+  background: transparent; color: rgba(255,255,255,0.35);
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.proto-btn.active {
+  background: rgba(26,111,196,0.25);
+  border-color: rgba(26,111,196,0.5);
+  color: #60a5fa;
+}
+
+/* Connect button */
+.connect-btn {
+  width: 100%; padding: 11px;
+  background: var(--blue);
+  border: none; border-radius: 9px;
+  color: white; font-size: 14px; font-weight: 500;
+  cursor: pointer; letter-spacing: 0.1px;
+  transition: background 0.15s, transform 0.1s;
+  font-family: var(--sans);
+}
+.connect-btn:hover { background: var(--blue2); }
+.connect-btn:active { transform: scale(0.99); }
+.connect-btn.loading {
+  background: #1a4a80; pointer-events: none;
+}
+
+/* Recent connections */
+.recents { margin-top: 16px; }
+.recents-title {
+  font-size: 10px; color: rgba(255,255,255,0.25);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+.recent-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: 7px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer; margin-bottom: 5px;
+  transition: background 0.15s;
+}
+.recent-item:hover { background: rgba(255,255,255,0.07); }
+.recent-ip { font-size: 12px; color: rgba(255,255,255,0.6); font-family: var(--mono); }
+.recent-meta { font-size: 10px; color: rgba(255,255,255,0.25); }
+.recent-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+/* Error message */
+.login-error {
+  font-size: 11px; color: #f87171; text-align: center;
+  padding: 6px; border-radius: 6px;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+  margin-top: 8px; display: none;
+}
+.login-error.show { display: block; animation: shake 0.3s ease; }
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-4px)} 40%,80%{transform:translateX(4px)}
+}
+
+/* Status bar */
+.login-statusbar {
+  margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.status-pips { display: flex; gap: 4px; }
+.pip { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); }
+.pip.active { background: var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+.status-txt { font-size: 11px; color: var(--text3); }
+
+/* ════════════════════════════════
+   MAIN DASHBOARD
+════════════════════════════════ */
+#dashboard { display: none; flex-direction: column; height: 100vh; }
+#dashboard.visible { display: flex; }
+
+/* macOS-style title bar for dashboard */
+#dash-titlebar {
+  height: 38px; flex-shrink: 0;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 14px; gap: 8px;
+  -webkit-app-region: drag;
+  position: relative;
+}
+.dash-dots { display: flex; gap: 8px; }
+.dash-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+.dash-dot.r { background: #ff5f57; }
+.dash-dot.y { background: #febc2e; }
+.dash-dot.g { background: #28c840; }
+.dash-title {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+}
+.dash-title-text { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.5); }
+.dash-conn-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px;
+  background: rgba(34,197,94,0.15); color: var(--green);
+  border: 1px solid rgba(34,197,94,0.2); font-family: var(--mono);
+}
+.dash-right {
+  margin-left: auto; display: flex; align-items: center; gap: 12px;
+}
+.disconnect-btn {
+  font-size: 11px; padding: 3px 10px; border-radius: 5px;
+  background: rgba(239,68,68,0.15); color: #f87171;
+  border: 1px solid rgba(239,68,68,0.25); cursor: pointer;
+  transition: all 0.15s;
+}
+.disconnect-btn:hover { background: rgba(239,68,68,0.25); }
+
+/* ── Layout ── */
+#dash-body { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 190px; flex-shrink: 0;
+  background: var(--bg1); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.sb-section { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.sb-title {
+  font-size: 9px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;
+}
+.cam-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  margin-bottom: 2px; border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+.cam-item:hover { background: var(--bg3); }
+.cam-item.active { background: #1a2a3d; border-left-color: var(--blue); }
+.cdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.cdot.online { background: var(--green); }
+.cdot.alert { background: var(--red); animation: blink 1s infinite; }
+.cdot.offline { background: #555; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+.cam-nm { font-size: 12px; font-weight: 500; color: var(--text1); }
+.cam-loc { font-size: 10px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.add-cam-btn {
+  width: 100%; padding: 7px; border-radius: 6px;
+  background: transparent; border: 1px dashed var(--border2);
+  color: var(--text3); font-size: 11px; cursor: pointer;
+  transition: all 0.15s; margin-top: 4px; font-family: var(--sans);
+}
+.add-cam-btn:hover { background: var(--bg3); color: var(--blue); border-color: var(--blue); }
+
+.det-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; }
+.det-lbl { font-size: 11px; color: var(--text2); }
+.toggle {
+  width: 34px; height: 18px; border-radius: 9px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  cursor: pointer; position: relative; transition: background 0.2s;
+}
+.toggle.on { background: var(--blue); border-color: var(--blue2); }
+.toggle::after {
+  content:''; position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 50%; background: white;
+  transition: left 0.2s;
+}
+.toggle.on::after { left: 18px; }
+
+.conf-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+.conf-lbl { font-size: 11px; color: var(--text2); }
+.conf-val { font-size: 11px; color: var(--blue); font-family: var(--mono); }
+input[type=range] {
+  width: 100%; height: 3px; margin: 4px 0;
+  appearance: none; background: var(--bg3); border-radius: 2px; outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  appearance: none; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--blue); cursor: pointer;
+  border: 2px solid white;
+}
+
+/* ── Main ── */
+#main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+#camgrid {
+  flex: 1; display: grid; gap: 2px;
+  background: #040608; padding: 2px; overflow: hidden;
+}
+#camgrid.g2x2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+#camgrid.g1x1 { grid-template-columns: 1fr; }
+#camgrid.g1m  { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
+
+.feed-cell {
+  background: #060a0f; border: 1px solid var(--border);
+  position: relative; overflow: hidden; cursor: pointer;
+  transition: border-color 0.2s;
+}
+.feed-cell:hover { border-color: rgba(26,111,196,0.5); }
+.feed-cell.alerting { border-color: var(--red) !important; animation: aborder 1.5s infinite; }
+.feed-cell.main-cell { grid-row: 1 / 3; }
+@keyframes aborder { 0%,100%{border-color:#ef4444}50%{border-color:#450a0a} }
+.feed-cell img { width:100%;height:100%;object-fit:cover;display:none; }
+.feed-ph {
+  width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  background: repeating-linear-gradient(45deg,#060a0f 0,#060a0f 10px,#080c12 10px,#080c12 20px);
+}
+.feed-ph svg { width:28px;height:28px;fill:var(--border2); }
+.feed-ph-txt { font-size:11px;color:var(--text3); }
+
+.ov-top {
+  position:absolute;top:0;left:0;right:0;padding:7px 10px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);
+  pointer-events:none;
+}
+.ov-bot {
+  position:absolute;bottom:0;left:0;right:0;padding:7px 10px;
+  display:flex;justify-content:space-between;align-items:flex-end;
+  background:linear-gradient(to top,rgba(0,0,0,.8),transparent);
+  pointer-events:none;
+}
+.feed-name { font-size:12px;font-weight:500;color:white; }
+.feed-res  { font-size:10px;color:var(--green);font-family:var(--mono); }
+.feed-ts   { font-size:10px;color:var(--text2);font-family:var(--mono); }
+.rec-badge { display:flex;align-items:center;gap:4px;font-size:10px;color:var(--red); }
+.rec-dot   { width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1s infinite; }
+.det-badges { display:flex;flex-direction:column;align-items:flex-end;gap:3px; }
+.det-badge {
+  font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:0.3px;
+}
+.det-badge.smoke { background:#9a341299;color:#fdba74;border:1px solid #c2410c; }
+.det-badge.phone { background:#1d4ed899;color:#93c5fd;border:1px solid #2563eb; }
+.det-badge.clear { background:#14532d99;color:#86efac;border:1px solid #15803d; }
+
+/* ── Bottom panel ── */
+#bottom {
+  height: 155px; flex-shrink:0;
+  background: var(--bg1); border-top: 1px solid var(--border);
+  display: flex;
+}
+#alarm-list { flex:1;padding:8px 12px;overflow-y:auto; }
+.al-hdr {
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;
+}
+.al-title { font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px; }
+.al-cnt {
+  font-size:10px;background:var(--red);color:white;
+  padding:1px 6px;border-radius:10px;font-family:var(--mono);
+}
+.alarm-row {
+  display:flex;align-items:flex-start;gap:8px;
+  padding:5px 0;border-bottom:1px solid #111820;
+  animation:fadein 0.3s;
+}
+@keyframes fadein { from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none} }
+.al-icon {
+  width:22px;height:22px;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;
+}
+.al-icon.smoke { background:#7c2d1233; }
+.al-icon.phone { background:#1e3a5f33; }
+.al-msg { font-size:12px;color:var(--text1); }
+.al-meta { font-size:10px;color:var(--text3);margin-top:1px; }
+.al-conf { color:var(--blue);font-family:var(--mono); }
+.empty-al { font-size:12px;color:var(--text3);text-align:center;padding:16px 0; }
+
+#right-panel {
+  width:200px;flex-shrink:0;
+  border-left:1px solid var(--border);padding:8px 12px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.rp-title { font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px; }
+.stat-grid { display:grid;grid-template-columns:1fr 1fr;gap:5px; }
+.stat-card {
+  background:var(--bg0);border:1px solid var(--border);
+  border-radius:5px;padding:5px 8px;
+}
+.sc-lbl { font-size:9px;color:var(--text3); }
+.sc-val { font-size:18px;font-weight:600;font-family:var(--mono); }
+.sc-val.red { color:var(--red); }
+.sc-val.blue { color:#60a5fa; }
+.cbar { }
+.cbar-top { display:flex;justify-content:space-between;margin-bottom:2px; }
+.cbar-lbl { font-size:10px;color:var(--text2); }
+.cbar-v   { font-size:10px;font-family:var(--mono); }
+.cbar-track { height:3px;background:var(--bg3);border-radius:2px; }
+.cbar-fill { height:100%;border-radius:2px;transition:width .5s; }
+
+/* ── Add cam modal ── */
+#cam-modal {
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.6);align-items:center;justify-content:center;
+}
+#cam-modal.open { display:flex; }
+.modal-win {
+  background:var(--mac-blur);
+  backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
+  border:1px solid var(--mac-border2);border-radius:12px;
+  overflow:hidden;width:360px;
+  box-shadow:0 24px 48px rgba(0,0,0,0.7);
+}
+.modal-tb {
+  height:36px;background:rgba(40,40,42,.9);
+  border-bottom:1px solid var(--mac-border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;position:relative;
+}
+.modal-tb-title { position:absolute;left:50%;transform:translateX(-50%);font-size:12px;font-weight:500;color:rgba(255,255,255,0.45); }
+.modal-body { padding:20px; }
+.mfield { margin-bottom:10px; }
+.mfield label { display:block;font-size:11px;font-weight:500;color:rgba(255,255,255,0.35);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px; }
+.mfield input {
+  width:100%;padding:8px 10px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);border-radius:7px;
+  color:white;font-size:12px;font-family:var(--mono);outline:none;
+  transition:border-color .2s;
+}
+.mfield input:focus { border-color:rgba(26,111,196,0.6); }
+.mhint { font-size:10px;color:rgba(255,255,255,0.2);margin-top:3px; }
+.modal-btns { display:flex;gap:8px;margin-top:14px; }
+.mbtn-p {
+  flex:1;padding:9px;background:var(--blue);border:none;
+  color:white;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;
+  font-family:var(--sans);transition:background .15s;
+}
+.mbtn-p:hover { background:var(--blue2); }
+.mbtn-s {
+  padding:9px 16px;background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);
+  border-radius:8px;font-size:13px;cursor:pointer;font-family:var(--sans);
+}
+
+/* ── Topbar stats ── */
+#topbar-stats {
+  display:none;position:absolute;right:100px;
+  align-items:center;gap:14px;
+}
+.tb-s { display:flex;flex-direction:column;align-items:center; }
+.tb-sv { font-size:15px;font-weight:600;font-family:var(--mono); }
+.tb-sl { font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px; }
+
+/* ── Scan animation on feed placeholder ── */
+@keyframes scan {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+.scan-line {
+  position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(to right,transparent,rgba(26,111,196,0.4),transparent);
+  animation:scan 3s linear infinite;pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN SCREEN
+═══════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="mac-window">
+
+    <div class="mac-titlebar">
+      <div class="mac-dot r" onclick="window.close()"></div>
+      <div class="mac-dot y"></div>
+      <div class="mac-dot g"></div>
+      <div class="mac-titlebar-title">NexVision AI</div>
+    </div>
+
+    <div class="mac-body">
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg viewBox="0 0 30 30"><circle cx="15" cy="8" r="5"/><path d="M6 24c0-5 4-9 9-9s9 4 9 9"/><rect x="5" y="26" width="20" height="2.5" rx="1.25"/></svg>
+        </div>
+        <div class="login-title">NexVision AI</div>
+        <div class="login-sub">Davranış Tespit Sistemi</div>
+      </div>
+
+      <!-- Protocol -->
+      <div class="proto-select">
+        <div class="proto-btn active" onclick="setProto('ws')" id="proto-ws">WebSocket</div>
+        <div class="proto-btn" onclick="setProto('rtsp')" id="proto-rtsp">RTSP Direct</div>
+        <div class="proto-btn" onclick="setProto('demo')" id="proto-demo">Demo Mod</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-row">
+          <div class="field" style="flex:2">
+            <label>Sunucu IP Adresi</label>
+            <input id="f-ip" type="text" placeholder="192.168.1.100" value="localhost" spellcheck="false" autocomplete="off">
+          </div>
+          <div class="field" style="flex:1">
+            <label>Port</label>
+            <input id="f-port" type="text" placeholder="8000" value="8000" spellcheck="false">
+          </div>
+        </div>
+
+        <div id="auth-fields">
+          <div class="field-row">
+            <div class="field">
+              <label>Kullanıcı Adı</label>
+              <input id="f-user" type="text" placeholder="admin" value="admin">
+            </div>
+            <div class="field">
+              <label>Şifre</label>
+              <input id="f-pass" type="password" placeholder="••••••">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="connect-btn" id="connect-btn" onclick="doConnect()">
+        Bağlan
+      </button>
+
+      <div class="login-error" id="login-error">Bağlantı kurulamadı. IP ve port adresini kontrol edin.</div>
+
+      <!-- Recent connections -->
+      <div class="recents" id="recents">
+        <div class="recents-title">Son Bağlantılar</div>
+        <div id="recent-list"></div>
+      </div>
+
+      <div class="login-statusbar">
+        <div class="status-pips">
+          <div class="pip" id="pip1"></div>
+          <div class="pip" id="pip2"></div>
+          <div class="pip" id="pip3"></div>
+        </div>
+        <div class="status-txt" id="status-txt">Bağlantı bekleniyor</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD
+═══════════════════════════════════════════ -->
+<div id="dashboard">
+
+  <!-- macOS titlebar -->
+  <div id="dash-titlebar">
+    <div class="dash-dots">
+      <div class="dash-dot r" onclick="doDisconnect()"></div>
+      <div class="dash-dot y"></div>
+      <div class="dash-dot g"></div>
+    </div>
+    <div class="dash-title">
+      <div class="dash-title-text">NexVision AI</div>
+      <div class="dash-conn-badge" id="conn-badge">● --:--</div>
+    </div>
+    <div class="dash-right">
+      <span style="font-size:11px;color:var(--text2);font-family:var(--mono)" id="dash-clock">--:--:--</span>
+      <span style="font-size:11px;color:var(--text3)" id="dash-date">--</span>
+      <button class="disconnect-btn" onclick="doDisconnect()">Bağlantıyı Kes</button>
+    </div>
+  </div>
+
+  <div id="dash-body">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div class="sb-section">
+        <div class="sb-title">Kameralar</div>
+        <div id="cam-list"></div>
+        <button class="add-cam-btn" onclick="openAddCam()">+ Kamera Ekle</button>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-title">Tespit Modülleri</div>
+        <div class="det-row">
+          <span class="det-lbl">Sigara</span>
+          <div class="toggle on" id="tog-smoke" onclick="toggleMod('smoke')"></div>
+        </div>
+        <div class="det-row">
+          <span class="det-lbl">Telefon</span>
+          <div class="toggle on" id="tog-phone" onclick="toggleMod('phone')"></div>
+        </div>
+        <div class="det-row">
+          <span class="det-lbl">Kişi</span>
+          <div class="toggle on" id="tog-person" onclick="toggleMod('person')"></div>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-title">Hassasiyet</div>
+        <div class="conf-row">
+          <span class="conf-lbl">Güven Eşiği</span>
+          <span class="conf-val" id="conf-disp">%70</span>
+        </div>
+        <input type="range" min="40" max="95" value="70" id="conf-slider"
+               oninput="document.getElementById('conf-disp').textContent='%'+this.value">
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-title">Görünüm</div>
+        <div class="det-row">
+          <span class="det-lbl">2×2 Izgara</span>
+          <div class="toggle on" id="tog-layout" onclick="cycleLayout()"></div>
+        </div>
+      </div>
+
+      <div class="sb-section" style="flex:1">
+        <div class="sb-title">Bağlantı</div>
+        <div style="font-size:11px;color:var(--text3);line-height:2">
+          <div id="sys-host">—</div>
+          <div id="sys-proto">—</div>
+          <div id="sys-cams">Kamera: 0</div>
+          <div id="sys-model">Model: YOLOv8n</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div id="main-content">
+      <div id="camgrid" class="g2x2"></div>
+
+      <div id="bottom">
+        <div id="alarm-list">
+          <div class="al-hdr">
+            <span class="al-title">Son Alarmlar</span>
+            <span class="al-cnt" id="al-count">0</span>
+          </div>
+          <div id="alarm-rows">
+            <div class="empty-al">Sistem izleniyor — alarm yok</div>
+          </div>
+        </div>
+
+        <div id="right-panel">
+          <div>
+            <div class="rp-title">Bugün</div>
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="sc-lbl">Sigara</div>
+                <div class="sc-val red" id="st-smoke">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="sc-lbl">Telefon</div>
+                <div class="sc-val blue" id="st-phone">0</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="rp-title">AI Güven</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div class="cbar">
+                <div class="cbar-top"><span class="cbar-lbl">Sigara</span><span class="cbar-v" style="color:#f97316" id="cv-smoke">—</span></div>
+                <div class="cbar-track"><div class="cbar-fill" id="cb-smoke" style="width:0%;background:#c2410c"></div></div>
+              </div>
+              <div class="cbar">
+                <div class="cbar-top"><span class="cbar-lbl">Telefon</span><span class="cbar-v" style="color:#60a5fa" id="cv-phone">—</span></div>
+                <div class="cbar-track"><div class="cbar-fill" id="cb-phone" style="width:0%;background:#2563eb"></div></div>
+              </div>
+              <div class="cbar">
+                <div class="cbar-top"><span class="cbar-lbl">Kişi</span><span class="cbar-v" style="color:#4ade80" id="cv-person">—</span></div>
+                <div class="cbar-track"><div class="cbar-fill" id="cb-person" style="width:0%;background:#15803d"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Camera Modal -->
+<div id="cam-modal">
+  <div class="modal-win">
+    <div class="modal-tb">
+      <div class="mac-dot r" onclick="closeAddCam()" style="width:12px;height:12px;border-radius:50%;background:#ff5f57;cursor:pointer;"></div>
+      <div class="mac-dot y" style="width:12px;height:12px;border-radius:50%;background:#febc2e;margin-left:8px;"></div>
+      <div class="mac-dot g" style="width:12px;height:12px;border-radius:50%;background:#28c840;margin-left:8px;"></div>
+      <div class="modal-tb-title">Yeni Kamera</div>
+    </div>
+    <div class="modal-body">
+      <div class="mfield">
+        <label>Kamera Adı</label>
+        <input id="m-name" placeholder="CAM-05">
+      </div>
+      <div class="mfield">
+        <label>Konum</label>
+        <input id="m-loc" placeholder="Koridor, Depo...">
+      </div>
+      <div class="mfield">
+        <label>RTSP Adresi</label>
+        <input id="m-url" placeholder="rtsp://admin:sifre@192.168.1.64:554/Streaming/Channels/101">
+        <div class="mhint">Hikvision: /Streaming/Channels/101 (ana) veya /102 (alt)</div>
+      </div>
+      <div class="mfield">
+        <label>Çözünürlük</label>
+        <input id="m-res" value="1920x1080">
+      </div>
+      <div class="modal-btns">
+        <button class="mbtn-p" onclick="addCam()">Ekle</button>
+        <button class="mbtn-s" onclick="closeAddCam()">İptal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+let ws = null, wsTimer = null;
+let proto = 'ws';
+let connHost = '', connPort = '8000';
+let cameras = {};
+let alarms = [], smokeC = 0, phoneC = 0;
+let modules = { smoke:true, phone:true, person:true };
+let layout = '2x2';
+let recentConns = JSON.parse(localStorage.getItem('nv_recents') || '[]');
+let isDemoMode = false;
+let demoIntervals = [];
+
+// ════════════════════════════════════════════
+// LOGIN
+// ════════════════════════════════════════════
+function setProto(p) {
+  proto = p;
+  ['ws','rtsp','demo'].forEach(x => {
+    document.getElementById('proto-'+x).classList.toggle('active', x===p);
+  });
+  const authFields = document.getElementById('auth-fields');
+  if (p === 'demo') {
+    authFields.style.opacity = '0.3';
+    authFields.style.pointerEvents = 'none';
+  } else {
+    authFields.style.opacity = '1';
+    authFields.style.pointerEvents = '';
+  }
+}
+
+function renderRecents() {
+  const el = document.getElementById('recent-list');
+  if (recentConns.length === 0) {
+    document.getElementById('recents').style.display = 'none';
+    return;
+  }
+  document.getElementById('recents').style.display = 'block';
+  el.innerHTML = recentConns.slice(0,3).map(r => `
+    <div class="recent-item" onclick="fillRecent('${r.ip}','${r.port}')">
+      <div>
+        <div class="recent-ip">${r.ip}:${r.port}</div>
+        <div class="recent-meta">${r.time}</div>
+      </div>
+      <div class="recent-dot"></div>
+    </div>
+  `).join('');
+}
+
+function fillRecent(ip, port) {
+  document.getElementById('f-ip').value = ip;
+  document.getElementById('f-port').value = port;
+}
+
+function setStatus(msg, active) {
+  document.getElementById('status-txt').textContent = msg;
+  ['pip1','pip2','pip3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'pip' + (active && i===0 ? ' active' : '');
+  });
+}
+
+async function doConnect() {
+  const ip   = document.getElementById('f-ip').value.trim() || 'localhost';
+  const port = document.getElementById('f-port').value.trim() || '8000';
+  const btn  = document.getElementById('connect-btn');
+  const err  = document.getElementById('login-error');
+  err.classList.remove('show');
+
+  if (proto === 'demo') {
+    isDemoMode = true;
+    enterDashboard(ip, port);
+    return;
+  }
+
+  btn.classList.add('loading');
+  btn.textContent = 'Bağlanıyor...';
+  setStatus('Sunucuya bağlanıyor...', true);
+
+  connHost = ip; connPort = port;
+  const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${wsProto}://${ip}:${port}/ws`;
+
+  try {
+    await new Promise((resolve, reject) => {
+      const testWs = new WebSocket(wsUrl);
+      testWs.onopen = () => { testWs.close(); resolve(); };
+      testWs.onerror = () => reject(new Error('ws error'));
+      setTimeout(() => reject(new Error('timeout')), 4000);
+    });
+
+    // Başarılı
+    saveRecent(ip, port);
+    enterDashboard(ip, port);
+
+  } catch (e) {
+    // Bağlantı hatası → demo mod sun
+    btn.classList.remove('loading');
+    btn.textContent = 'Bağlan';
+    const isHttps = location.protocol === 'https:';
+    const wsProtoUsed = isHttps ? 'wss' : 'ws';
+    err.textContent = isHttps
+      ? `${ip}:${port} bağlantısı başarısız. HTTPS üzerinden bağlanmak için sunucunuzda WSS (SSL) aktif olmalı. Demo modda devam etmek ister misiniz?`
+      : `${ip}:${port} adresine bağlanılamadı. Demo modda devam etmek ister misiniz?`;
+    err.classList.add('show');
+    err.style.cursor = 'pointer';
+    err.onclick = () => { isDemoMode = true; enterDashboard(ip, port); };
+    setStatus('Bağlantı başarısız', false);
+  }
+}
+
+function saveRecent(ip, port) {
+  recentConns = recentConns.filter(r => !(r.ip===ip && r.port===port));
+  recentConns.unshift({ ip, port, time: new Date().toLocaleString('tr-TR') });
+  recentConns = recentConns.slice(0, 5);
+  localStorage.setItem('nv_recents', JSON.stringify(recentConns));
+}
+
+function enterDashboard(ip, port) {
+  connHost = ip; connPort = port;
+
+  // Login → Dashboard geçişi
+  document.getElementById('login-screen').classList.add('hidden');
+  setTimeout(() => {
+    document.getElementById('login-screen').style.display = 'none';
+    const dash = document.getElementById('dashboard');
+    dash.classList.add('visible');
+    requestAnimationFrame(() => requestAnimationFrame(() => initDashboard()));
+  }, 500);
+}
+
+function doDisconnect() {
+  if (ws) { ws.close(); ws = null; }
+  demoIntervals.forEach(t => clearInterval(t)); demoIntervals = [];
+  isDemoMode = false;
+  cameras = {}; alarms = []; smokeC = 0; phoneC = 0;
+
+  document.getElementById('dashboard').classList.remove('visible');
+  document.getElementById('login-screen').style.display = 'flex';
+  setTimeout(() => document.getElementById('login-screen').classList.remove('hidden'), 10);
+
+  // Reset btn
+  const btn = document.getElementById('connect-btn');
+  btn.classList.remove('loading');
+  btn.textContent = 'Bağlan';
+}
+
+// ════════════════════════════════════════════
+// DASHBOARD INIT
+// ════════════════════════════════════════════
+function initDashboard() {
+  // Sidebar bilgileri
+  document.getElementById('sys-host').textContent = `${connHost}:${connPort}`;
+  document.getElementById('sys-proto').textContent = isDemoMode ? 'Demo Mod' : 'WebSocket';
+  document.getElementById('conn-badge').textContent = `● ${connHost}:${connPort}`;
+
+  // Clock
+  setInterval(() => {
+    const now = new Date();
+    document.getElementById('dash-clock').textContent = now.toLocaleTimeString('tr-TR');
+    document.getElementById('dash-date').textContent = now.toLocaleDateString('tr-TR',{day:'2-digit',month:'short'});
+  }, 1000);
+
+  if (isDemoMode) {
+    initDemo();
+  } else {
+    connectWS();
+    loadAPI();
+  }
+}
+
+// ════════════════════════════════════════════
+// WEBSOCKET
+// ════════════════════════════════════════════
+function connectWS() {
+  if (ws) ws.close();
+  const _p = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${_p}://${connHost}:${connPort}/ws`);
+  ws.onopen = () => {
+    document.getElementById('conn-badge').style.color = 'var(--green)';
+    setInterval(() => ws && ws.readyState===1 && ws.send(JSON.stringify({type:'ping'})), 25000);
+  };
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'frame') updateFrame(msg);
+    else if (msg.type === 'alarm') addAlarm(msg.data);
+    else if (msg.type === 'camera_error') markError(msg.camera_id);
+  };
+  ws.onclose = () => {
+    document.getElementById('conn-badge').style.color = 'var(--red)';
+    wsTimer = setTimeout(connectWS, 3000);
+  };
+}
+
+async function loadAPI() {
+  try {
+    const base = `http://${connHost}:${connPort}/api`;
+    const [cRes, aRes] = await Promise.all([fetch(base+'/cameras'), fetch(base+'/alarms?limit=20')]);
+    (await cRes.json()).forEach(c => regCam(c));
+    (await aRes.json()).forEach(a => addAlarm(a, false));
+  } catch(e) { initDemo(); }
+}
+
+// ════════════════════════════════════════════
+// DEMO MODE
+// ════════════════════════════════════════════
+function initDemo() {
+  isDemoMode = true;
+  document.getElementById('sys-proto').textContent = 'Demo Mod Aktif';
+
+  const demoCams = [
+    { id:'c1', name:'CAM-01', location:'Giriş Holü',   resolution:'1920×1080' },
+    { id:'c2', name:'CAM-02', location:'Üretim Alanı', resolution:'1920×1080' },
+    { id:'c3', name:'CAM-03', location:'Depo',          resolution:'1280×720'  },
+    { id:'c4', name:'CAM-04', location:'Arka Çıkış',    resolution:'1920×1080' },
+  ];
+  demoCams.forEach(c => regCam({...c, rtsp_url:'demo'}));
+
+  const camDetType = { c1:'smoke', c2:'clear', c3:'phone', c4:'both' };
+  const figures = {};
+  demoCams.forEach(cam => {
+    figures[cam.id] = {
+      x: 0.18 + Math.random()*0.45,
+      y: 0.28 + Math.random()*0.25,
+      vx: (Math.random()-0.5)*0.006,
+      vy: (Math.random()-0.5)*0.003,
+    };
+  });
+
+  // Her kamera için canvas oluştur - doğrudan feed-cell içine inject et
+  function setupCanvas(cam) {
+    const cell = document.getElementById('feed-' + cam.id);
+    if (!cell) return null;
+    const ph = document.getElementById('ph-' + cam.id);
+    if (ph) ph.style.display = 'none';
+    // Varsa eski canvas sil
+    const old = cell.querySelector('canvas.demo-cv');
+    if (old) old.remove();
+    const cv = document.createElement('canvas');
+    cv.className = 'demo-cv';
+    cv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;display:block;z-index:1;';
+    cell.insertBefore(cv, cell.firstChild);
+    return cv;
+  }
+
+  const canvases = {};
+
+  function drawFrame(cam) {
+    const cell = document.getElementById('feed-' + cam.id);
+    if (!cell) return;
+    const W = cell.offsetWidth;
+    const H = cell.offsetHeight;
+    if (W < 10 || H < 10) return;
+
+    // Canvas yoksa oluştur
+    if (!canvases[cam.id]) {
+      const cv = setupCanvas(cam);
+      if (!cv) return;
+      canvases[cam.id] = cv;
+    }
+    const cv = canvases[cam.id];
+
+    // Boyut senkronize et
+    if (cv.width !== W || cv.height !== H) {
+      cv.width = W;
+      cv.height = H;
+    }
+
+    const ctx = cv.getContext('2d');
+    const det = camDetType[cam.id] || 'clear';
+    const fig = figures[cam.id];
+
+    // --- ARKAPLAN ---
+    ctx.fillStyle = '#07090e';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = '#0f1820'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    // Zemin
+    ctx.fillStyle = '#0b1219';
+    ctx.fillRect(0, H*0.73, W, H*0.27);
+    ctx.strokeStyle = '#1e3040'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H*0.73); ctx.lineTo(W, H*0.73); ctx.stroke();
+
+    // Perspektif çizgileri
+    ctx.strokeStyle = '#0d1c2b'; ctx.lineWidth = 0.5;
+    for (let x = 0; x <= W; x += 55) {
+      ctx.beginPath(); ctx.moveTo(W/2, H*0.2); ctx.lineTo(x, H); ctx.stroke();
+    }
+
+    // --- FİGÜR HAREKETİ ---
+    fig.x += fig.vx; fig.y += fig.vy;
+    if (fig.x < 0.05 || fig.x > 0.82) fig.vx *= -1;
+    if (fig.y < 0.18 || fig.y > 0.58) fig.vy *= -1;
+
+    const fw = W * 0.08, fh = H * 0.22;
+    const fx = fig.x * W, fy = fig.y * H;
+
+    // --- BOUNDING BOX ---
+    if (det !== 'clear') {
+      const drawBox = (color, ox, oy, ow, oh, label) => {
+        ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 3]);
+        ctx.strokeRect(ox, oy, ow, oh);
+        ctx.setLineDash([]);
+        const cs = 10;
+        [[ox,oy],[ox+ow,oy],[ox,oy+oh],[ox+ow,oy+oh]].forEach(([cx,cy],i)=>{
+          const dx=i%2===0?1:-1, dy=i<2?1:-1;
+          ctx.strokeStyle=color; ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(cx,cy+dy*cs);ctx.lineTo(cx,cy);ctx.lineTo(cx+dx*cs,cy);ctx.stroke();
+        });
+        const tw = label.length * 6.2 + 10;
+        ctx.fillStyle = color + 'dd';
+        ctx.fillRect(ox, oy - 20, tw, 18);
+        ctx.fillStyle = 'white'; ctx.font = 'bold 9px monospace';
+        ctx.fillText(label, ox + 4, oy - 7);
+      };
+      if (det === 'smoke' || det === 'both')
+        drawBox('#ea580c', fx-10, fy-10, fw+20, fh+20, 'SIGARA %' + (88+Math.floor(Math.random()*8)));
+      if (det === 'phone' || det === 'both')
+        drawBox('#2563eb', fx+fw*0.4, fy+fh*0.1, fw*0.7, fh*0.55, 'TELEFON %' + (82+Math.floor(Math.random()*10)));
+    }
+
+    // --- KİŞİ SİLUETİ ---
+    const personColor = det !== 'clear' ? '#4a6a8a' : '#2a3a4d';
+    ctx.fillStyle = personColor;
+    ctx.beginPath(); ctx.arc(fx+fw/2, fy+fh*0.11, fw*0.28, 0, Math.PI*2); ctx.fill();
+    ctx.fillRect(fx+fw*0.18, fy+fh*0.23, fw*0.64, fh*0.42);
+    ctx.fillRect(fx+fw*0.18, fy+fh*0.66, fw*0.27, fh*0.34);
+    ctx.fillRect(fx+fw*0.55, fy+fh*0.66, fw*0.27, fh*0.34);
+
+    if (det === 'smoke' || det === 'both') {
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(fx+fw*0.7, fy+fh*0.28, fw*0.22, fh*0.04);
+      ctx.fillStyle = 'rgba(200,200,200,0.3)';
+      for (let s=0;s<3;s++){ctx.beginPath();ctx.arc(fx+fw*0.9+s*2,fy+fh*(0.15-s*0.06),3+s,0,Math.PI*2);ctx.fill();}
+    }
+    if (det === 'phone' || det === 'both') {
+      ctx.fillStyle = '#1e3a5f'; ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 1;
+      const px=fx+fw*0.55, py=fy+fh*0.28;
+      ctx.fillRect(px,py,fw*0.18,fh*0.28); ctx.strokeRect(px,py,fw*0.18,fh*0.28);
+      ctx.fillStyle='#93c5fd'; ctx.fillRect(px+2,py+3,fw*0.12,fh*0.18);
+    }
+
+    // Tarama çizgisi
+    const sy = ((Date.now() / 20 + cam.id.charCodeAt(1) * 300) % H);
+    const sg = ctx.createLinearGradient(0, sy-18, 0, sy+18);
+    sg.addColorStop(0, 'transparent');
+    sg.addColorStop(0.5, 'rgba(26,111,196,0.14)');
+    sg.addColorStop(1, 'transparent');
+    ctx.fillStyle = sg; ctx.fillRect(0, sy-18, W, 36);
+
+    // Timestamp
+    ctx.fillStyle = 'rgba(100,140,180,0.7)';
+    ctx.font = '10px monospace';
+    ctx.fillText(new Date().toLocaleString('tr-TR'), 8, H-10);
+  }
+
+  // --- MAIN LOOP: setInterval tabanlı, rAF sorunlarından bağımsız ---
+  const frameInterval = setInterval(() => {
+    if (!isDemoMode) { clearInterval(frameInterval); return; }
+    demoCams.forEach(cam => drawFrame(cam));
+  }, 33); // ~30fps
+  demoIntervals.push(frameInterval);
+
+  // Tespit badge güncellemeleri
+  const detInterval = setInterval(() => {
+    if (!isDemoMode) return;
+    demoCams.forEach(cam => {
+      const det = camDetType[cam.id];
+      if (det === 'clear') return;
+      const types = det === 'both' ? ['smoke','phone'] : [det];
+      const dets = types.map(t => ({ class: t, confidence: 0.75+Math.random()*0.18, bbox:[0.3,0.2,0.6,0.8] }));
+      updateDetections(cam.id, dets, cam.resolution);
+    });
+  }, 2000);
+  demoIntervals.push(detInterval);
+
+  // Alarm üretimi
+  const alarmInterval = setInterval(() => {
+    if (!isDemoMode) return;
+    const camIdx = Math.floor(Math.random()*4);
+    const cam = demoCams[camIdx];
+    const det = camDetType[cam.id];
+    if (det === 'clear') return;
+    const type = (det === 'both') ? (Math.random()>0.5?'smoke':'phone') : det;
+    const conf = 0.74 + Math.random()*0.20;
+    updateDetections(cam.id, [{ class: type, confidence: conf, bbox:[0.3,0.2,0.6,0.8] }], cam.resolution);
+    addAlarm({ type, camera_id:cam.id, camera_name:cam.name, location:cam.location, confidence:conf, timestamp:new Date().toLocaleTimeString('tr-TR') });
+  }, 4500);
+  demoIntervals.push(alarmInterval);
+}
+
+
+function regCam(cfg) {
+  cameras[cfg.id] = { cfg, detections:[], alerting:false };
+  renderSidebar();
+  renderGrid();
+  document.getElementById('sys-cams').textContent = `Kamera: ${Object.keys(cameras).length}`;
+}
+
+function renderSidebar() {
+  document.getElementById('cam-list').innerHTML = Object.values(cameras).map(c=>`
+    <div class="cam-item" id="ci-${c.cfg.id}" onclick="selCam('${c.cfg.id}')">
+      <div class="cdot online" id="dot-${c.cfg.id}"></div>
+      <div>
+        <div class="cam-nm">${c.cfg.name}</div>
+        <div class="cam-loc">${c.cfg.location}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderGrid() {
+  const grid = document.getElementById('camgrid');
+  const ids = Object.keys(cameras);
+  grid.innerHTML = '';
+  ids.forEach((id,i)=>{
+    const cam = cameras[id];
+    const cell = document.createElement('div');
+    cell.className = 'feed-cell' + (layout==='1m'&&i===0?' main-cell':'');
+    cell.id = 'feed-'+id;
+    cell.onclick = () => selCam(id);
+    cell.innerHTML = `
+      <div class="feed-ph" id="ph-${id}">
+        <div class="scan-line"></div>
+        <svg viewBox="0 0 32 32"><path d="M28 6H4a2 2 0 00-2 2v16a2 2 0 002 2h24a2 2 0 002-2V8a2 2 0 00-2-2zM14 20a6 6 0 110-12 6 6 0 010 12z"/><circle cx="14" cy="14" r="3"/></svg>
+        <div class="feed-ph-txt">${cam.cfg.name} — Bağlanıyor...</div>
+      </div>
+      <img id="img-${id}" alt="" onload="this.style.display='block';document.getElementById('ph-${id}').style.display='none'">
+      <div class="ov-top">
+        <div>
+          <div class="feed-name">${cam.cfg.name} — ${cam.cfg.location}</div>
+          <div class="rec-badge"><div class="rec-dot"></div>KAYIT</div>
+        </div>
+        <div style="text-align:right">
+          <div class="feed-res" id="res-${id}">${cam.cfg.resolution||'—'}</div>
+        </div>
+      </div>
+      <div class="ov-bot">
+        <div class="feed-ts" id="ts-${id}">${new Date().toLocaleString('tr-TR')}</div>
+        <div class="det-badges" id="bdg-${id}"><div class="det-badge clear">TEMİZ</div></div>
+      </div>
+    `;
+    grid.appendChild(cell);
+  });
+}
+
+function updateFrame(msg) {
+  const { camera_id, frame, detections, resolution, timestamp } = msg;
+  if (!cameras[camera_id]) return;
+  const img = document.getElementById('img-'+camera_id);
+  if (img && frame) img.src = 'data:image/jpeg;base64,'+frame;
+  const ts = document.getElementById('ts-'+camera_id);
+  if (ts) ts.textContent = timestamp;
+  updateDetections(camera_id, detections||[], resolution);
+}
+
+function updateDetections(camId, detections, resolution) {
+  const minConf = parseInt(document.getElementById('conf-slider').value)/100;
+  const filtered = detections.filter(d => d.confidence>=minConf && modules[d.class]);
+  const hasSmoke = filtered.some(d=>d.class==='smoke');
+  const hasPhone = filtered.some(d=>d.class==='phone');
+  const alert = hasSmoke||hasPhone;
+  if(cameras[camId]) cameras[camId].alerting = alert;
+
+  filtered.forEach(d => {
+    const pct = Math.round(d.confidence*100);
+    const cv = document.getElementById('cv-'+d.class);
+    const cb = document.getElementById('cb-'+d.class);
+    if(cv) cv.textContent = '%'+pct;
+    if(cb) cb.style.width = pct+'%';
+  });
+
+  const bdg = document.getElementById('bdg-'+camId);
+  const cell = document.getElementById('feed-'+camId);
+  const dot = document.getElementById('dot-'+camId);
+  if(bdg) {
+    if(hasSmoke&&hasPhone) bdg.innerHTML='<div class="det-badge smoke">SIGARA</div><div class="det-badge phone">TELEFON</div>';
+    else if(hasSmoke) bdg.innerHTML='<div class="det-badge smoke">SIGARA TESPİT</div>';
+    else if(hasPhone) bdg.innerHTML='<div class="det-badge phone">TELEFON TESPİT</div>';
+    else bdg.innerHTML='<div class="det-badge clear">TEMİZ</div>';
+  }
+  if(cell) cell.classList.toggle('alerting', alert);
+  if(dot) dot.className = 'cdot '+(alert?'alert':'online');
+  const resEl = document.getElementById('res-'+camId);
+  if(resEl&&resolution) resEl.textContent = resolution;
+}
+
+function markError(camId) {
+  const dot = document.getElementById('dot-'+camId);
+  if(dot) dot.className = 'cdot offline';
+}
+
+// ════════════════════════════════════════════
+// ALARMS
+// ════════════════════════════════════════════
+function addAlarm(alarm) {
+  if(alarm.type==='smoke') smokeC++;
+  else if(alarm.type==='phone') phoneC++;
+  alarms.unshift(alarm);
+  if(alarms.length>100) alarms.pop();
+  document.getElementById('al-count').textContent = alarms.length;
+  document.getElementById('st-smoke').textContent = smokeC;
+  document.getElementById('st-phone').textContent = phoneC;
+  renderAlarms();
+}
+
+function renderAlarms() {
+  const el = document.getElementById('alarm-rows');
+  if(!alarms.length){ el.innerHTML='<div class="empty-al">Sistem izleniyor — alarm yok</div>'; return; }
+  el.innerHTML = alarms.slice(0,30).map(a=>`
+    <div class="alarm-row">
+      <div class="al-icon ${a.type}">${a.type==='smoke'?'🚬':'📱'}</div>
+      <div>
+        <div class="al-msg">${a.camera_name} — ${a.type==='smoke'?'Sigara kullanımı':'Telefon kullanımı'} tespit edildi</div>
+        <div class="al-meta">${a.timestamp} — ${a.location} — <span class="al-conf">%${Math.round(a.confidence*100)} güven</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════════
+// UI CONTROLS
+// ════════════════════════════════════════════
+function toggleMod(m) {
+  modules[m] = !modules[m];
+  document.getElementById('tog-'+m).classList.toggle('on', modules[m]);
+}
+function cycleLayout() {
+  layout = layout==='2x2'?'1m':'2x2';
+  document.getElementById('camgrid').className = layout==='2x2'?'g2x2':'g1m';
+  document.getElementById('tog-layout').classList.toggle('on', layout==='2x2');
+  renderGrid();
+}
+function selCam(id) {
+  document.querySelectorAll('.cam-item').forEach(el=>el.classList.remove('active'));
+  const el = document.getElementById('ci-'+id);
+  if(el) el.classList.add('active');
+}
+function openAddCam()  { document.getElementById('cam-modal').classList.add('open'); }
+function closeAddCam() { document.getElementById('cam-modal').classList.remove('open'); }
+function addCam() {
+  const id = 'c'+Date.now();
+  const cfg = {
+    id,
+    name: document.getElementById('m-name').value||id,
+    location: document.getElementById('m-loc').value||'—',
+    rtsp_url: document.getElementById('m-url').value,
+    resolution: document.getElementById('m-res').value||'1920×1080',
+  };
+  if(!cfg.rtsp_url){ alert('RTSP adresi gerekli'); return; }
+  try {
+    fetch(`http://${connHost}:${connPort}/api/cameras`,{
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(cfg)
+    });
+  } catch(e) {}
+  regCam(cfg);
+  closeAddCam();
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+renderRecents();
+setProto('ws');
+</script>
+</body>
+</html>
